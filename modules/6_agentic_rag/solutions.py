@@ -225,7 +225,7 @@ tools = tool_manager.get_tools()
 print(f"✓ Created {len(tools)} tools")
 
 # Initialize LLM with tools
-llm = ChatOpenAI(model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini'), temperature=0)
+llm = ChatOpenAI(model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'), reasoning_effort="none")
 
 tool_definitions = []
 for tool in tools:

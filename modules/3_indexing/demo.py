@@ -83,7 +83,7 @@ Settings.embed_model = OpenAIEmbedding(
     max_retries=5     # Retry on failure
 )
 Settings.llm = OpenAI(
-    model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
+    model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
     api_key=os.getenv('OPENAI_API_KEY'),
     timeout=300,      # 5 min timeout (Tree/Keyword indexes are slow!)
     max_retries=5

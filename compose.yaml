@@ -1,0 +1,26 @@
+services:
+  workshop:
+    build:
+      context: .
+      args:
+        # Supplied by the Makefile so container-written files match your host
+        # user. Defaults keep a bare `docker compose build` working.
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    image: supportdesk-rag-workshop:local
+
+    # Your OpenAI key and model choices. Copy .env.example to .env first.
+    env_file:
+      - .env
+
+    # The repo is bind-mounted rather than copied, so edits on the host take
+    # effect immediately -- edit a module, re-run it, no rebuild.
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+
+    # Keep the container alive so `docker compose exec` is instant. Without
+    # this it would run bash, see no terminal, and exit.
+    command: ["sleep", "infinity"]
+    stdin_open: true
+    tty: true

@@ -1,0 +1,21 @@
+# Keep secrets out of the build context. The key reaches the container through
+# env_file at run time, never baked into an image layer.
+.env
+
+.git
+.gitignore
+
+# Generated at run time; never part of a build.
+**/__pycache__/
+**/*.py[cod]
+**/chroma_db/
+**/rag_vectorstore*/
+**/agent_vectorstore/
+**/solution_chroma_db/
+**/*.png
+
+.venv/
+venv/
+.vscode/
+.idea/
+.claude/

@@ -74,7 +74,7 @@ embeddings = OpenAIEmbeddings(
 
 # Use direct OpenAI client instead of LangChain ChatOpenAI (fixes connection pooling issue)
 openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), timeout=30.0, max_retries=2)
-chat_model = os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini')
+chat_model = os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna')
 
 print("✓ OpenAI models initialized (30s timeout)")
 
@@ -84,7 +84,7 @@ try:
     test_response = openai_client.chat.completions.create(
         model=chat_model,
         messages=[{"role": "user", "content": "Say 'OK'"}],
-        max_tokens=5
+        max_completion_tokens=5
     )
     print("✓ API connection successful")
 except Exception as e:
@@ -131,7 +131,10 @@ Answer (cite ticket IDs):"""
     response = openai_client.chat.completions.create(
         model=chat_model,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        # GPT-5 series models removed the temperature knob (the API rejects
+        # anything but the default). Grounding comes from the prompt and the
+        # retrieved context, not from sampling settings.
+        reasoning_effort="none",
     )
     answer = response.choices[0].message.content
     
@@ -285,9 +288,9 @@ Reasoning: <explanation>"""
 
     try:
         response = client.chat.completions.create(
-            model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
+            model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
             messages=[{"role": "user", "content": prompt}],
-            temperature=0,
+            reasoning_effort="none",
             timeout=30
         )
         
@@ -359,9 +362,9 @@ Reasoning: <explanation>"""
 
     try:
         response = client.chat.completions.create(
-            model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
+            model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
             messages=[{"role": "user", "content": prompt}],
-            temperature=0,
+            reasoning_effort="none",
             timeout=30
         )
         
@@ -491,7 +494,7 @@ if avg_f1 >= 0.75 and (avg_groundedness < 0.70 or avg_completeness < 0.65):
 if avg_groundedness < 0.70:
     print("⚠ PATTERN D — Low Groundedness (Hallucination Risk)")
     print("  LLM is generating claims not supported by retrieved context.")
-    print("  Fix: Stricter grounding prompt, temperature=0, require ticket citations.")
+    print("  Fix: Stricter grounding prompt, require ticket citations, refuse when unsupported.")
 
 # ── Release Gate ──────────────────────────────────────────────────────────────
 # Determines whether this build should be deployed, reviewed, or blocked.

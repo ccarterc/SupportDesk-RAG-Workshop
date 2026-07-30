@@ -104,7 +104,7 @@ load_dotenv()
 
 # Configure LlamaIndex
 Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-4o-mini')
+Settings.llm = OpenAI(model='gpt-5.6-luna')
 
 # Load data
 with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
@@ -173,7 +173,7 @@ from llama_index.llms.openai import OpenAI
 load_dotenv()
 
 Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-4o-mini')
+Settings.llm = OpenAI(model='gpt-5.6-luna')
 
 # Load data
 with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
@@ -235,7 +235,7 @@ from llama_index.llms.openai import OpenAI
 load_dotenv()
 
 Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-4o-mini')
+Settings.llm = OpenAI(model='gpt-5.6-luna')
 
 # Load data
 with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
@@ -291,7 +291,7 @@ from llama_index.llms.openai import OpenAI
 load_dotenv()
 
 Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-4o-mini')
+Settings.llm = OpenAI(model='gpt-5.6-luna')
 
 # Load data
 with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
@@ -350,7 +350,7 @@ from llama_index.llms.openai import OpenAI
 load_dotenv()
 
 Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-4o-mini')
+Settings.llm = OpenAI(model='gpt-5.6-luna')
 
 # Load data
 with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:

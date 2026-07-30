@@ -123,9 +123,9 @@ Rate groundedness (0-10):
 Format: Score: X / Reason: <explanation>"""
 
     response = openai_client.chat.completions.create(
-        model='gpt-4o-mini',
+        model='gpt-5.6-luna',
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        reasoning_effort="none"
     )
     
     return response.choices[0].message.content
@@ -155,9 +155,9 @@ Rate completeness (0-10):
 Format: Score: X / Reason: <explanation>"""
 
     response = openai_client.chat.completions.create(
-        model='gpt-4o-mini',
+        model='gpt-5.6-luna',
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        reasoning_effort="none"
     )
     
     return response.choices[0].message.content

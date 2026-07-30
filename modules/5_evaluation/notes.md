@@ -425,7 +425,7 @@ Symptom:  Groundedness < 0.70 regardless of retrieval quality
 Meaning:  LLM is hallucinating — generating claims not in the context
 Fixes:
 - Add stricter grounding prompts ("only use the provided context")
-- Set temperature = 0
+- Lower k, so less loosely-related context reaches the model
 - Require inline ticket ID citations
 - Add a hallucination detection verification step
 ```

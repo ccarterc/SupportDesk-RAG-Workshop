@@ -27,7 +27,7 @@ load_dotenv()
 
 # Configure LlamaIndex
 Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-4o-mini')
+Settings.llm = OpenAI(model='gpt-5.6-luna')
 
 # Load data
 print("Loading data...")

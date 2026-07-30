@@ -250,8 +250,8 @@ from langchain_core.callbacks import StreamingStdOutCallbackHandler
 
 # Create streaming LLM
 streaming_llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,
+    model="gpt-5.6-luna",
+    reasoning_effort="none",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()]
 )

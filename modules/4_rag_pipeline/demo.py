@@ -226,14 +226,23 @@ if os.getenv("OPENAI_API_KEY"):
     # Initialize ChatOpenAI for generation
     # Reference: https://python.langchain.com/docs/integrations/chat/openai
     llm = ChatOpenAI(
-        model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
-        temperature=0,  # Temperature controls randomness (0 = deterministic, 2 = very creative)
-        # For RAG, use temperature=0 to ensure consistent, factual responses
-        # Reference: https://platform.openai.com/docs/guides/text-generation/how-should-i-set-the-temperature-parameter
+        model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
+        # NOTE ON temperature: older tutorials (and older versions of this
+        # workshop) set temperature=0 here to make RAG answers deterministic.
+        # The GPT-5 series removed that knob -- the API rejects any value other
+        # than the default. Determinism now comes from the two things that
+        # mattered more anyway: tight retrieval and a strict grounding prompt.
+        # If you point OPENAI_CHAT_MODEL at an older model, temperature=0 works
+        # again, but you should not need it.
+        #
+        # reasoning_effort="none" keeps this a fast, non-reasoning call. It is
+        # also what makes function/tool calling work on this model via
+        # /v1/chat/completions -- see module 6.
+        reasoning_effort="none",
         timeout=120,  # Increase timeout for slower connections
         max_retries=3,  # Retry on transient failures
     )
-    print(f"✓ Using {os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini')}")
+    print(f"✓ Using {os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna')}")
 else:
     print("⚠ OpenAI API key not found!")
     print("  Please set OPENAI_API_KEY environment variable")
@@ -550,8 +559,14 @@ if qa_chain:
     print("Type 'quit' to exit.\n")
     
     while True:
-        user_query = input("You: ").strip()
-        
+        try:
+            user_query = input("You: ").strip()
+        except EOFError:
+            # No terminal attached (piped input, CI, `make all`). Exit cleanly
+            # instead of crashing so the demo can run unattended.
+            print("\n(no input stream -- skipping interactive mode)")
+            break
+
         if user_query.lower() in ['quit', 'exit', 'q']:
             print("Goodbye!")
             break
@@ -578,5 +593,5 @@ print("1. RAG pipeline: Retrieve → Inject Context → Generate")
 print("2. Strict prompt engineering prevents hallucinations")
 print("3. Always return source documents for verification")
 print("4. Implement fallbacks for low-confidence matches")
-print("5. Temperature=0 for deterministic, grounded answers")
+print("5. Grounding comes from retrieval + prompt, not sampling parameters")
 print("\nNext: Evaluation & Metrics")

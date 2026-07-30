@@ -78,7 +78,7 @@ index = VectorStoreIndex.from_documents(documents)
 retriever = index.as_retriever(similarity_top_k=3)
 
 # Use in LangChain chain
-llm = ChatOpenAI(model="gpt-4o-mini")
+llm = ChatOpenAI(model="gpt-5.6-luna")
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     retriever=retriever,
@@ -1691,7 +1691,7 @@ retriever = index.as_retriever(
 )
 
 # Step 3: Use in LangChain chain
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     chain_type="stuff",
@@ -1749,7 +1749,7 @@ retriever = LlamaIndexRetriever(vector_index, similarity_top_k=5)
 from langchain.chains import ConversationalRetrievalChain
 
 qa = ConversationalRetrievalChain.from_llm(
-    llm=ChatOpenAI(model="gpt-4o-mini"),
+    llm=ChatOpenAI(model="gpt-5.6-luna"),
     retriever=retriever,
     return_source_documents=True
 )
@@ -1795,7 +1795,7 @@ Question: {question}
 Answer:"""
 
 prompt = PromptTemplate(template=template, input_variables=["context", "question"])
-llm = ChatOpenAI(model="gpt-4o-mini")
+llm = ChatOpenAI(model="gpt-5.6-luna")
 chain = LLMChain(llm=llm, prompt=prompt)
 
 # Query
@@ -1835,7 +1835,7 @@ tools = [
 ]
 
 # Create agent
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
 agent = initialize_agent(
     tools=tools,
     llm=llm,
@@ -1940,7 +1940,7 @@ def create_rag_chain():
     retriever = index.as_retriever(similarity_top_k=3)
     
     # Build LangChain chain
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=retriever,

@@ -41,8 +41,13 @@ print("="*80)
 
 print("\nInitializing LLM...")
 llm = ChatOpenAI(
-    model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
-    temperature=0,
+    model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
+    # reasoning_effort="none" is required here, not optional. On the GPT-5
+    # series, /v1/chat/completions refuses function tools unless reasoning is
+    # switched off -- the API tells you to either use /v1/responses or set this.
+    # Since the whole point of this module is tool calling, we set it.
+    # (It also replaces the temperature=0 these models no longer accept.)
+    reasoning_effort="none",
     api_key=os.getenv('OPENAI_API_KEY')
 )
 print("✓ LLM initialized")

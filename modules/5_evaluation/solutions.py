@@ -53,7 +53,7 @@ print(f"✓ Loaded {len(documents)} documents, {len(eval_queries)} eval queries"
 # Initialize embeddings and OpenAI client
 embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
 openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-chat_model = os.getenv('OPENAI_CHAT_MODEL', 'gpt-4o-mini')
+chat_model = os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna')
 
 # Build vector store
 print("Building vector store...")
@@ -84,7 +84,7 @@ Answer:"""
     response = openai_client.chat.completions.create(
         model=chat_model,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        reasoning_effort="none"
     )
     
     return {'answer': response.choices[0].message.content, 'source_documents': docs}
@@ -214,7 +214,7 @@ Format: Score: X / Reason: <explanation>"""
     response = openai_client.chat.completions.create(
         model=chat_model,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        reasoning_effort="none"
     )
     
     output = response.choices[0].message.content
@@ -274,7 +274,7 @@ Format: Score: X / Reason: <explanation>"""
     response = openai_client.chat.completions.create(
         model=chat_model,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        reasoning_effort="none"
     )
     
     output = response.choices[0].message.content

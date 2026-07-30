@@ -265,8 +265,8 @@ prompt = ChatPromptTemplate.from_template(template)
 from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0  # Deterministic for factual answers
+    model="gpt-5.6-luna",
+    reasoning_effort="none"  # fast, non-reasoning call
 )
 ```
 
@@ -540,14 +540,14 @@ history.append(AIMessage(content="TICK-001 is about login failures after passwor
 
 #### Step 8 — Generating the answer: `ChatOpenAI`
 
-With the prompt assembled and filled, `ChatOpenAI` sends it to the model and gets back a response. The key parameter to understand is `temperature`. At `temperature=0` the model is deterministic — it will produce the same answer every time it sees the same prompt. For a support assistant this is almost always what you want: a user who asks the same question twice should get the same answer, not a different one depending on random sampling. The model returns an `AIMessage` object rather than a plain string, which is why the next step is always a parser.
+With the prompt assembled and filled, `ChatOpenAI` sends it to the model and gets back a response. Older versions of this material set `temperature=0` here to make the answer deterministic; the GPT-5 series removed that control and the API now rejects any value but the default. We pass `reasoning_effort="none"` instead, which keeps the call fast and — on `/v1/chat/completions` — is also what allows function tools to work later in module 6. Consistency for a support assistant now comes from the two things that mattered more anyway: retrieving a tight set of documents, and a prompt that forbids answering beyond them. The model returns an `AIMessage` object rather than a plain string, which is why the next step is always a parser.
 
 ```python
 from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,      # deterministic — same prompt → same answer every time
+    model="gpt-5.6-luna",
+    reasoning_effort="none",  # fast, non-reasoning call
     timeout=120,
     max_retries=3,
 )
@@ -1371,7 +1371,7 @@ retriever = vector_store.as_retriever(
 ✅ Be explicit about using only the context
 ✅ Request source citations
 ✅ Use few-shot examples
-✅ Set the right temperature (0 for factual, 0.7 for creative)
+✅ Forbid answers that go beyond the retrieved context
 
 ### 2. Retrieval Tuning
 ✅ Test different k values (3, 5, 7)
@@ -1429,15 +1429,17 @@ return {
 }
 ```
 
-### 4. Wrong Temperature
-❌ High temperature for facts
+### 4. Expecting Sampling Settings to Enforce Grounding
+❌ Reaching for a temperature knob
 ```python
-llm = ChatOpenAI(temperature=0.9)  # Too creative!
+llm = ChatOpenAI(temperature=0)  # GPT-5 models reject this outright
 ```
 
-✅ Low temperature for facts
+✅ Constrain the model with retrieval and the prompt
 ```python
-llm = ChatOpenAI(temperature=0)  # Deterministic
+llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
+# ...paired with a prompt that says: answer ONLY from the context,
+# cite ticket IDs, and say you don't know when the context falls short.
 ```
 
 ## Testing RAG Systems

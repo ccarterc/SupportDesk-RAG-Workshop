@@ -66,7 +66,7 @@ print("✓ Vector store ready")
 
 # Create retriever and LLM
 retriever = vector_store.as_retriever(search_kwargs={"k": 3})
-llm = ChatOpenAI(model='gpt-4o-mini', temperature=0, timeout=120, max_retries=3)
+llm = ChatOpenAI(model='gpt-5.6-luna', reasoning_effort="none", timeout=120, max_retries=3)
 
 def format_docs(docs):
     """
@@ -544,8 +544,8 @@ from langchain_core.callbacks import StreamingStdOutCallbackHandler
 
 # Create streaming LLM
 streaming_llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,
+    model="gpt-5.6-luna",
+    reasoning_effort="none",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
     timeout=120,

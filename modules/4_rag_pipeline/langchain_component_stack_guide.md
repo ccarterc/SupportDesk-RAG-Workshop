@@ -465,10 +465,10 @@ Implements Runnable: `prompt.invoke({"context": ..., "question": ...})` → `Cha
 ```python
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
 ```
 
-- `temperature=0` is recommended for factual / support workflows.
+- `reasoning_effort="none"` keeps the call fast and non-reasoning. GPT-5 models no longer accept `temperature`.
 
 Implements Runnable: `llm.invoke(prompt_value)` → `AIMessage`.
 
@@ -677,7 +677,7 @@ One formula: **RAG = Retrieve + Prompt + Generate + Parse**.
 | 1 | Pass `List[Document]` directly into prompt | Template errors or garbled prompt | Always convert with `format_docs` first |
 | 2 | Lose question during fan-out | Prompt missing `{question}` value | Add `"question": RunnablePassthrough()` |
 | 3 | No grounding rules in system prompt | Confident hallucinations | Add "Answer ONLY from context" + citation requirement |
-| 4 | High temperature for factual workflows | Inconsistent answers | Set `temperature=0` |
+| 4 | Expecting sampling settings to enforce grounding | Inconsistent answers | Tighten retrieval and the grounding prompt |
 | 5 | Wrong chunk settings | Low retrieval quality | Tune `chunk_size`, `chunk_overlap`, and `k` together |
 | 6 | Use `RunnablePassthrough()` when input is already a dict | Lost keys (`chat_history` disappears) | Use `RunnablePassthrough.assign()` instead |
 

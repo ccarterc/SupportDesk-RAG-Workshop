@@ -77,7 +77,7 @@ python --version
 - Built complete RAG pipeline: Retrieve → Augment → Generate
 - Used **LCEL (LangChain Expression Language)** with pipe operators (`|`)
 - Engineered prompts with strict anti-hallucination rules
-- Set `temperature=0` for deterministic, factual responses
+- Used `reasoning_effort="none"` for fast, non-reasoning calls (the GPT-5 series removed `temperature`)
 - Returned source citations for transparency
 
 **Key Takeaway:** Modern LangChain uses LCEL (not deprecated RetrievalQA). Prompt engineering is CRITICAL—strict grounding rules prevent hallucinations.
@@ -161,8 +161,8 @@ Don't trust PCA/t-SNE/UMAP visualizations of embeddings—they lose 99%+ of info
 ### 3. **Chunking Matters More Than You Think**
 A better chunking strategy often improves results more than a fancier embedding model. Start with 500-token chunks with 50-token overlap using RecursiveCharacterTextSplitter.
 
-### 4. **Temperature=0 for RAG**
-Use `temperature=0` for factual, grounded responses. Higher temperatures introduce creativity and potential hallucinations.
+### 4. **Determinism Comes From Grounding, Not Sampling**
+Older RAG guidance says to set `temperature=0`. The GPT-5 series removed that control — the API rejects any value but the default. What actually keeps answers stable is tight retrieval plus a prompt that forbids going beyond the supplied context.
 
 ### 5. **Always Cite Sources**
 Return `source_documents` with every answer. Transparency builds trust and enables verification.
@@ -279,7 +279,7 @@ Systematically compare approaches:
 
 **A:** Multiple strategies:
 1. **Strict prompt engineering** - Explicit rules to only use provided context
-2. **Temperature=0** - Deterministic, factual responses
+2. **Tight retrieval** - Fewer, more relevant chunks beat a large noisy context
 3. **Citation requirements** - Force LLM to cite sources
 4. **Confidence thresholds** - Reject low-similarity retrievals
 5. **Answer validation** - Check if answer is grounded in context
