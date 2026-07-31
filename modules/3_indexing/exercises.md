@@ -18,9 +18,32 @@ Run `make setup` once, then run all exercise commands from the repo root.
 | Undo your edits to the demo | `git checkout modules/3_indexing/demo.py` |
 | Activate `.venv` for your own Python commands | `source .venv/bin/activate` |
 
-**Finding the code.** Exercises tell you what to search for rather than giving
-line numbers -- the moment you add a line, every number below it is wrong. Use
-your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+## Fast navigation during class
+
+All exercises on this page modify **one file**:
+`modules/3_indexing/demo.py`.
+
+Do not scroll through the file looking for the right section. Open the file,
+press **Ctrl+F** (Windows/Linux) or **Cmd+F** (macOS), and paste the exact search
+text from the table below. Line numbers are intentionally avoided because they
+change as soon as you complete an exercise.
+
+| Exercise | Search for this exact text | Action |
+|---|---|---|
+| 1 | `query = "How do I fix authentication` | Replace one line |
+| 2 | `vector_query_engine = vector_index` | Replace one line |
+| 3 | `tree_query_engine = tree_index` | Replace one line |
+| 4 | `# PART 5: Hybrid Retrieval` | Paste immediately **above** this heading |
+| 5 | `# PART 5: Hybrid Retrieval` | Paste immediately **above** this heading |
+| 6 | `# PART 2: Summary Index` | Paste immediately **above** this heading |
+| 7 | `# PART 2: Summary Index` | Paste immediately **above** this heading |
+| 8 | `vector_index = VectorStoreIndex.from_documents` and `keyword_index = KeywordTableIndex.from_documents` | Replace two lines |
+| Bonus | `for node in vector_nodes + keyword_nodes:` | Replace one line |
+
+> **Important:** The snippets below are small patches for the existing demo.
+> Do not create a new file or paste a second copy of the imports, data loading,
+> settings, or index construction unless an exercise explicitly says to add an
+> import.
 
 **When something breaks.** Reset with the `git checkout` above and re-run. You
 cannot damage anything permanently.
@@ -31,7 +54,10 @@ cannot damage anything permanently.
 
 **Task**: Modify the demo to search for a different type of issue.
 
-**Open `modules/3_indexing/demo.py` and search for `query = "How do I fix authentication`:**
+**Where to edit:** Open `modules/3_indexing/demo.py`, press Ctrl+F/Cmd+F, and
+search for `query = "How do I fix authentication`.
+
+**Find this line:**
 ```python
 query = "How do I fix authentication issues after password reset?"
 ```
@@ -62,7 +88,10 @@ make m3
 
 **Task**: Get more search results from the Vector Index.
 
-**In the same file, search for `vector_query_engine = vector_index`:**
+**Where to edit:** In `modules/3_indexing/demo.py`, press Ctrl+F/Cmd+F and search
+for `vector_query_engine = vector_index`.
+
+**Find this line:**
 ```python
 vector_query_engine = vector_index.as_query_engine(similarity_top_k=3)
 ```
@@ -86,7 +115,10 @@ make m3
 
 **Task**: Modify how many branches the Tree Index explores.
 
-**In the same file, search for `tree_query_engine = tree_index`:**
+**Where to edit:** In `modules/3_indexing/demo.py`, press Ctrl+F/Cmd+F and search
+for `tree_query_engine = tree_index`.
+
+**Find this line:**
 ```python
 tree_query_engine = tree_index.as_query_engine(child_branch_factor=2)
 ```
@@ -116,7 +148,13 @@ make m3
 
 **Task**: See how Keyword Index handles exact term matching.
 
-**In the same file, search for `keyword_query_engine = keyword_index` and add this just below the block that prints its response:**
+**Where to edit:**
+
+1. Open `modules/3_indexing/demo.py`.
+2. Press Ctrl+F/Cmd+F and search for `# PART 5: Hybrid Retrieval`.
+3. Place your cursor on the blank line immediately **above** that heading.
+4. Paste this block there:
+
 ```python
 # Test keyword-specific query
 keyword_query = "TICK-001"
@@ -139,65 +177,34 @@ make m3
 
 **Task**: Run the same query through two index types and compare with minimal edits.
 
-In existing code, add 1-2 test queries and compare `Vector` vs `Keyword` outputs only.
-Reference snippet:
+Both query engines already exist in the demo. Do not copy the imports or rebuild
+the indexes.
+
+**Where to edit:**
+
+1. Open `modules/3_indexing/demo.py`.
+2. Press Ctrl+F/Cmd+F and search for `# PART 5: Hybrid Retrieval`.
+3. Place your cursor on the blank line immediately **above** that heading.
+4. If you completed Exercise 4, put this new block below the Exercise 4 block,
+   while keeping both blocks above the Part 5 heading.
+5. Paste this block:
+
 ```python
-import json
-import os
-from dotenv import load_dotenv
-from llama_index.core import (
-    VectorStoreIndex,
-    SummaryIndex,
-    TreeIndex,
-    KeywordTableIndex,
-    Document,
-    Settings,
-)
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.llms.openai import OpenAI
+# Exercise 5: compare the existing Vector and Keyword query engines
+test_queries = ["authentication login problem", "TICK-005"]
 
-load_dotenv()
-
-# Configure LlamaIndex
-Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-Settings.llm = OpenAI(model="gpt-5.6-luna")
-
-# Load data
-with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
-    tickets = json.load(f)
-
-documents = [
-    Document(
-        text=f"Title: {t['title']}\nDescription: {t['description']}\nResolution: {t['resolution']}",
-        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
-    )
-    for t in tickets
-]
-
-print("Building indexes...")
-vector_idx = VectorStoreIndex.from_documents(documents)
-keyword_idx = KeywordTableIndex.from_documents(documents)
-print("✓ Indexes built\n")
-
-# Compare on 3 queries
-test_queries = ["authentication login problem", "database timeout error", "TICK-005"]
-
-for query in test_queries:
-    print("=" * 60)
-    print(f"Query: '{query}'")
+for test_query in test_queries:
+    print("\n" + "=" * 60)
+    print(f"Comparison query: '{test_query}'")
     print("=" * 60)
 
-    # Vector Index
-    vec_response = vector_idx.as_query_engine(similarity_top_k=3).query(query)
-    print(f"\nVector Index:")
-    print(f"  {str(vec_response)[:150]}...")
+    vector_result = vector_query_engine.query(test_query)
+    print("\nVector Index:")
+    print(f"  {str(vector_result)[:150]}...")
 
-    # Keyword Index
-    kw_response = keyword_idx.as_query_engine().query(query)
-    print(f"\nKeyword Index:")
-    print(f"  {str(kw_response)[:150]}...")
-
-    print()
+    keyword_result = keyword_query_engine.query(test_query)
+    print("\nKeyword Index:")
+    print(f"  {str(keyword_result)[:150]}...")
 ```
 
 **Answer**: Which index works best for "TICK-005" (exact match) vs "authentication login problem" (semantic)?
@@ -214,60 +221,37 @@ make m3
 
 **Task**: Persist and reload index with a small patch.
 
-In your existing vector-index block, add:
-1. one `persist(...)` call
-2. one `load_index_from_storage(...)` block
-3. one verification query
+This exercise requires one import edit and one pasted block.
 
-Reference snippet:
-```python
-import json
-import os
-from dotenv import load_dotenv
-from llama_index.core import (
-    VectorStoreIndex,
-    Document,
-    Settings,
+### Edit 1 of 2: add the persistence imports
+
+1. Open `modules/3_indexing/demo.py`.
+2. Press Ctrl+F/Cmd+F and search for `from llama_index.core import (`.
+3. Add `StorageContext` and `load_index_from_storage` anywhere inside that
+   existing parenthesized import list:
+
+```text
     StorageContext,
     load_index_from_storage,
-)
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.llms.openai import OpenAI
+```
 
-load_dotenv()
+### Edit 2 of 2: save, load, and test the existing Vector Index
 
-Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-Settings.llm = OpenAI(model="gpt-5.6-luna")
+1. Press Ctrl+F/Cmd+F and search for `# PART 2: Summary Index`.
+2. Place your cursor on the blank line immediately **above** that heading.
+3. Paste this block:
 
-# Load data
-with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
-    tickets = json.load(f)
-
-documents = [
-    Document(
-        text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
-    )
-    for t in tickets
-]
-
-# Step 1: Build and save
-print("Building index...")
-vector_index = VectorStoreIndex.from_documents(documents)
+```python
+# Exercise 6: save the Vector Index that Part 1 already built
 vector_index.storage_context.persist(persist_dir="./my_saved_index")
 print("✓ Saved to ./my_saved_index")
 
-# Step 2: Load from disk
-print("\nLoading index...")
 storage_context = StorageContext.from_defaults(persist_dir="./my_saved_index")
 loaded_index = load_index_from_storage(storage_context)
-print("✓ Loaded from disk")
 
-# Step 3: Test it works
-query = "login problem"
-response = loaded_index.as_query_engine().query(query)
-print(f"\nQuery: '{query}'")
-print(f"Result: {response}")
+saved_index_query = "login problem"
+saved_index_response = loaded_index.as_query_engine().query(saved_index_query)
+print(f"Reloaded index result: {saved_index_response}")
 ```
 
 **Why this matters**: Building indexes is expensive (API calls). Persisting saves time and money!
@@ -284,61 +268,40 @@ make m3
 
 **Task**: Filter search results by category with one filter object.
 
-Add this to your current query flow:
+This exercise requires one import edit and one pasted block.
+
+### Edit 1 of 2: add the filter imports
+
+1. Open `modules/3_indexing/demo.py`.
+2. Press Ctrl+F/Cmd+F and search for `from llama_index.embeddings.openai`.
+3. Add this new import on the line immediately **above** it:
 
 ```python
-filters = MetadataFilters(
-    filters=[ExactMatchFilter(key="category", value="Authentication")]
-)
+from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
 ```
 
-Reference snippet:
+### Edit 2 of 2: compare unfiltered and filtered Vector searches
+
+1. Press Ctrl+F/Cmd+F and search for `# PART 2: Summary Index`.
+2. Place your cursor on the blank line immediately **above** that heading.
+3. If you completed Exercise 6, put this block below the Exercise 6 block,
+   while keeping both blocks above the Part 2 heading.
+4. Paste this block:
+
 ```python
-import json
-import os
-from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, Document, Settings
-from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.llms.openai import OpenAI
+# Exercise 7: compare the existing Vector Index with and without a filter
+filter_query = "system problem"
+unfiltered_response = vector_index.as_query_engine(similarity_top_k=3).query(
+    filter_query
+)
+print(f"Without filter: {unfiltered_response}")
 
-load_dotenv()
-
-Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-Settings.llm = OpenAI(model="gpt-5.6-luna")
-
-# Load data
-with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
-    tickets = json.load(f)
-
-documents = [
-    Document(
-        text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={
-            "ticket_id": t["ticket_id"],
-            "category": t["category"],
-            "priority": t["priority"],
-        },
-    )
-    for t in tickets
-]
-
-# Build index
-vector_index = VectorStoreIndex.from_documents(documents)
-
-# Query WITHOUT filter
-print("Without filter:")
-response = vector_index.as_query_engine(similarity_top_k=3).query("system problem")
-print(f"  {response}\n")
-
-# Query WITH category filter
-print("With 'Authentication' filter:")
 filters = MetadataFilters(
     filters=[ExactMatchFilter(key="category", value="Authentication")]
 )
 filtered_engine = vector_index.as_query_engine(similarity_top_k=3, filters=filters)
-filtered_response = filtered_engine.query("system problem")
-print(f"  {filtered_response}")
+filtered_response = filtered_engine.query(filter_query)
+print(f"With Authentication filter: {filtered_response}")
 ```
 
 **Try changing the filter**:
@@ -357,65 +320,47 @@ make m3
 
 **Task**: Measure build time with a tiny timing patch.
 
-Add `time.time()` around index construction for at least two indexes.
-Reference snippet:
+This exercise makes three small edits to the existing demo. Do not build a
+second set of indexes.
+
+### Edit 1 of 3: import `time`
+
+1. Open `modules/3_indexing/demo.py`.
+2. Press Ctrl+F/Cmd+F and search for `import os`.
+3. Add `import time` on the next line.
+
+### Edit 2 of 3: time the existing Vector Index build
+
+Press Ctrl+F/Cmd+F and search for this exact line:
+
 ```python
-import json
-import time
-import os
-from dotenv import load_dotenv
-from llama_index.core import (
-    VectorStoreIndex,
-    SummaryIndex,
-    KeywordTableIndex,
-    Document,
-    Settings,
-)
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.llms.openai import OpenAI
-
-load_dotenv()
-
-Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-Settings.llm = OpenAI(model="gpt-5.6-luna")
-
-# Load data
-with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
-    tickets = json.load(f)
-
-documents = [
-    Document(
-        text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
-    )
-    for t in tickets
-]
-
-print(f"Building indexes for {len(documents)} documents...\n")
-
-# Vector Index
-start = time.time()
 vector_index = VectorStoreIndex.from_documents(documents)
-vector_time = time.time() - start
-print(f"Vector Index: {vector_time:.2f}s")
+```
 
-# Keyword Index
-start = time.time()
-keyword_index = KeywordTableIndex.from_documents(documents)
-keyword_time = time.time() - start
-print(f"Keyword Index: {keyword_time:.2f}s")
+Replace that one line with:
 
-# Summary Index (note: doesn't pre-build, so fast to create)
-start = time.time()
-summary_index = SummaryIndex.from_documents(documents)
-summary_time = time.time() - start
-print(f"Summary Index: {summary_time:.2f}s")
+```python
+vector_start = time.time()
+vector_index = VectorStoreIndex.from_documents(documents)
+vector_seconds = time.time() - vector_start
+print(f"Vector Index build time: {vector_seconds:.2f}s")
+```
 
-print(
-    f"\n→ Vector Index takes longer because it generates embeddings for all documents"
-)
-print(f"→ Keyword Index uses LLM to extract keywords from each document")
-print(f"→ Summary Index is just storing documents (work happens at query time)")
+### Edit 3 of 3: time the existing Keyword Index build
+
+Press Ctrl+F/Cmd+F and search for this exact line:
+
+```python
+keyword_index = KeywordTableIndex.from_documents(keyword_documents)
+```
+
+Replace that one line with:
+
+```python
+keyword_start = time.time()
+keyword_index = KeywordTableIndex.from_documents(keyword_documents)
+keyword_seconds = time.time() - keyword_start
+print(f"Keyword Index build time: {keyword_seconds:.2f}s")
 ```
 
 **Run it:**
@@ -430,67 +375,22 @@ make m3
 
 **Task**: Combine Vector and Keyword search results.
 
-Small-edit option: combine only top-2 results from each retriever and deduplicate ticket IDs.
+The demo already contains the hybrid retrieval and deduplication logic. For this
+challenge, limit the fusion step to the top two results from each retriever.
 
-**Copy and run this code**:
+**Where to edit:**
+
+1. Open `modules/3_indexing/demo.py`.
+2. Press Ctrl+F/Cmd+F and search for this exact line:
+
 ```python
-import json
-import os
-from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, KeywordTableIndex, Document, Settings
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.llms.openai import OpenAI
-
-load_dotenv()
-
-Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-Settings.llm = OpenAI(model="gpt-5.6-luna")
-
-# Load data
-with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
-    tickets = json.load(f)
-
-documents = [
-    Document(
-        text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
-    )
-    for t in tickets
-]
-
-# Build both indexes
-vector_index = VectorStoreIndex.from_documents(documents)
-keyword_index = KeywordTableIndex.from_documents(documents)
-
-query = "authentication timeout error"
-
-# Get retrievers
-vector_retriever = vector_index.as_retriever(similarity_top_k=5)
-keyword_retriever = keyword_index.as_retriever()
-
-# Retrieve from both
-print(f"Query: '{query}'\n")
-
-print("Vector Results:")
-vector_nodes = vector_retriever.retrieve(query)
-for i, node in enumerate(vector_nodes[:3], 1):
-    print(f"  {i}. {node.node.metadata.get('ticket_id', 'N/A')}")
-
-print("\nKeyword Results:")
-keyword_nodes = keyword_retriever.retrieve(query)
-for i, node in enumerate(keyword_nodes[:3], 1):
-    print(f"  {i}. {node.node.metadata.get('ticket_id', 'N/A')}")
-
-# Simple hybrid: combine and deduplicate
-seen = set()
-hybrid_results = []
 for node in vector_nodes + keyword_nodes:
-    ticket_id = node.node.metadata.get("ticket_id")
-    if ticket_id and ticket_id not in seen:
-        seen.add(ticket_id)
-        hybrid_results.append(ticket_id)
+```
 
-print(f"\nHybrid Results (combined): {hybrid_results[:5]}")
+3. Replace it with:
+
+```python
+for node in vector_nodes[:2] + keyword_nodes[:2]:
 ```
 
 **Run it:**
