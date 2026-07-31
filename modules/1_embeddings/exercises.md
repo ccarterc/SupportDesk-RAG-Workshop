@@ -2,11 +2,36 @@
 
 > ✅ **Exercise style for this workshop:** keep each solution to a **small edit** (usually 3–15 lines) in existing files.
 
+
+## How to run these exercises
+
+Everything runs in the container, but you edit files normally on your own
+machine -- the repo is mounted inside, so a save takes effect immediately. There
+is nothing to rebuild or copy between edits.
+
+Run all commands from the repo root, with the container already up (`make up`).
+
+| What you want | Command |
+|---|---|
+| Run this module's demo | `make m1` |
+| Run a file you wrote yourself | `make run FILE=modules/1_embeddings/scratch.py` |
+| Undo your edits to the demo | `git checkout modules/1_embeddings/demo.py` |
+| Poke around inside the container | `make shell` |
+
+**Finding the code.** Exercises tell you what to search for rather than giving
+line numbers -- the moment you add a line, every number below it is wrong. Use
+your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+
+**When something breaks.** Reset with the `git checkout` above and re-run. You
+cannot damage anything permanently.
+
+---
+
 ## Exercise 1: Change the Search Query (Easy)
 
 **Task**: Modify the demo to search for a different type of issue.
 
-**In the demo code, find this line** (around line 103):
+**Open `modules/1_embeddings/demo.py` and search for `query = "Users can't login`:**
 ```python
 query = "Users can't login after changing password"
 ```
@@ -16,7 +41,13 @@ query = "Users can't login after changing password"
 query = "Database is running very slowly"
 ```
 
-**Run the demo and observe**:
+**Run it:**
+
+```bash
+make m1
+```
+
+**Observe:**
 - Do the top results match the new query?
 - What categories do the matching tickets belong to?
 
@@ -31,7 +62,7 @@ query = "Database is running very slowly"
 
 **Task**: Get more search results by changing top_k.
 
-**In the demo code, find this line** (around line 137):
+**In the same file, search for `top_k = 5`:**
 ```python
 top_k = 5
 ```
@@ -41,7 +72,13 @@ top_k = 5
 top_k = 10
 ```
 
-**Run the demo and answer**:
+**Run it:**
+
+```bash
+make m1
+```
+
+**Answer:**
 - At what rank does the similarity score drop below 0.5?
 - Are results #8, #9, #10 still relevant to your query?
 - What's the similarity score of result #10?
@@ -52,7 +89,7 @@ top_k = 10
 
 **Task**: Only show results above a certain similarity score.
 
-**Find the results loop in the demo** (around line 145):
+**In the same file, search for `for rank, idx in enumerate`:**
 ```python
 for rank, idx in enumerate(top_indices, 1):
     ticket = tickets[idx]
@@ -79,6 +116,12 @@ for rank, idx in enumerate(top_indices, 1):
 **Test with**:
 - A relevant query (should show results)
 - An unrelated query like `"How to make pizza"` (should show fewer/no results)
+
+**Run it:**
+
+```bash
+make m1
+```
 
 ---
 
@@ -107,7 +150,13 @@ for q in [query1, query2]:
     print(f"  Score: {sims[top_idx]:.4f}")
 ```
 
-**Run it and observe**: Do the queries find appropriate tickets?
+**Run it:**
+
+```bash
+make m1
+```
+
+**Observe:** Do the queries find appropriate tickets?
 
 ---
 
@@ -154,7 +203,13 @@ for i, text1 in enumerate(texts):
 
 Keep this to ~15 lines if you simplify printing.
 
-**Run it and answer**:
+**Run it:**
+
+```bash
+make m1
+```
+
+**Answer:**
 - What's the similarity between "authentication failed" and "login rejected"?
 - What's the similarity between "authentication failed" and "database timeout"?
 - Does this prove embeddings understand meaning, not just keywords?
@@ -228,6 +283,12 @@ for ticket, score in search_with_category("login problem", category_filter="Auth
     print(f"  {score:.3f} [{ticket['category']}] {ticket['title']}")
 ```
 
+**Run it:**
+
+```bash
+make m1
+```
+
 ---
 
 ## Exercise 7: Batch vs Single Embedding (Medium)
@@ -279,6 +340,12 @@ print(f"  Always batch your embeddings in production!")
 
 **Answer**: How much faster is batching for 5 texts?
 
+**Run it:**
+
+```bash
+make m1
+```
+
 ---
 
 ## Bonus Exercise: Similarity Matrix Heatmap (Challenge)
@@ -326,6 +393,12 @@ plt.show()
 print("✓ Saved as similarity_heatmap.png")
 ```
 
+**Run it:**
+
+```bash
+make m1
+```
+
 ---
 
 ## Quick Reference
@@ -360,3 +433,4 @@ Ready for more? Move on to **Hour 2: Chunking & Vector Stores** where we'll:
 ---
 
 **Questions?** Ask the instructor or refer back to the demo code!
+

@@ -25,7 +25,7 @@ EXEC_T  := $(COMPOSE) exec -T $(SVC)
 MODULES := 1_embeddings 2_chunking 3_indexing 4_rag_pipeline 5_evaluation 6_agentic_rag
 
 .DEFAULT_GOAL := help
-.PHONY: help setup env build up down restart shell verify \
+.PHONY: help setup env build up down restart shell verify run \
         m1 m2 m3 m4 m5 m6 all clean nuke
 
 help: ## Show this help
@@ -96,6 +96,12 @@ m5: ## Module 5 -- retrieval and generation evaluation
 
 m6: ## Module 6 -- agentic RAG with tool calling
 	$(call run_module,6: Agentic RAG,6_agentic_rag)
+
+run: ## Run any file in the container: make run FILE=modules/1_embeddings/scratch.py
+	@test -n "$(FILE)" || { \
+	  echo "Usage: make run FILE=modules/1_embeddings/scratch.py"; exit 1; }
+	@test -f "$(FILE)" || { echo "No such file: $(FILE)"; exit 1; }
+	$(EXEC) bash -c 'cd /workspace/$(dir $(FILE)) && python $(notdir $(FILE))'
 
 all: ## Run every module in order, unattended
 	@for m in $(MODULES); do \

@@ -1,5 +1,30 @@
 # Module 5 Exercises: Evaluation & Metrics
 
+
+## How to run these exercises
+
+Everything runs in the container, but you edit files normally on your own
+machine -- the repo is mounted inside, so a save takes effect immediately. There
+is nothing to rebuild or copy between edits.
+
+Run all commands from the repo root, with the container already up (`make up`).
+
+| What you want | Command |
+|---|---|
+| Run this module's demo | `make m5` |
+| Run a file you wrote yourself | `make run FILE=modules/5_evaluation/scratch.py` |
+| Undo your edits to the demo | `git checkout modules/5_evaluation/demo.py` |
+| Poke around inside the container | `make shell` |
+
+**Finding the code.** Exercises tell you what to search for rather than giving
+line numbers -- the moment you add a line, every number below it is wrong. Use
+your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+
+**When something breaks.** Reset with the `git checkout` above and re-run. You
+cannot damage anything permanently.
+
+---
+
 Complete these exercises after studying `demo.py`. Solutions are in `solutions.py`.
 
 > ✅ **Exercise style for this workshop:** keep each solution to a **small edit** (usually 3–15 lines) in existing code blocks.
@@ -41,13 +66,19 @@ relevant = ['TICK-001', 'TICK-003']
 # Expected: precision=0.67, recall=1.0, f1=0.80
 ```
 
+**Run it:** put your code in a new file, then run it inside the container.
+
+```bash
+make run FILE=modules/5_evaluation/scratch.py
+```
+
 ---
 
 ### Exercise 2: Evaluate All Queries
 
 **Task**: Run the metrics on all evaluation queries and compute averages.
 
-**In demo.py, find the evaluation loop and add your own print statements:**
+**Open `modules/5_evaluation/demo.py`, search for `def generate_answer(query, k=3)`, and add your own print statements inside it:**
 ```python
 all_metrics = []
 for query in eval_queries:
@@ -69,6 +100,12 @@ print(f"F1@3:        {avg_f1:.4f}")
 **Questions**:
 - What's your system's precision and recall?
 - Which metric is higher? Why?
+
+**Run it:**
+
+```bash
+make m5
+```
 
 ---
 
@@ -93,6 +130,12 @@ for k in [1, 3, 5, 10]:
 - As k increases, what happens to precision?
 - As k increases, what happens to recall?
 - What's the best k for your use case?
+
+**Run it:**
+
+```bash
+make m5
+```
 
 ---
 
@@ -133,6 +176,12 @@ Format: Score: X / Reason: <explanation>"""
 
 **Test on your RAG system's answers. Are they grounded?**
 
+**Run it:**
+
+```bash
+make m5
+```
+
 ---
 
 ### Exercise 5: LLM-as-Judge for Completeness
@@ -161,6 +210,12 @@ Format: Score: X / Reason: <explanation>"""
     )
     
     return response.choices[0].message.content
+```
+
+**Run it:**
+
+```bash
+make m5
 ```
 
 ---
@@ -208,6 +263,12 @@ def analyze_failures(eval_queries, vector_store, threshold=0.5):
 - What patterns do you see?
 - How would you fix them?
 
+**Run it:**
+
+```bash
+make m5
+```
+
 ---
 
 ### Exercise 7: Track Latency and Cost
@@ -252,6 +313,12 @@ metrics.report()
 - If this class feels too long, add only **two prints** to the existing `demo.py` report section:
     - average latency
     - estimated tokens per query
+
+**Run it:**
+
+```bash
+make m5
+```
 
 ---
 
@@ -307,10 +374,21 @@ Borderline system: REVIEW ['recall = 0.65 (target 0.70)']
 Bad system:        BLOCK ['groundedness = 0.60 (min 0.75)']
 ```
 
+**Run it:** put your code in a new file, then run it inside the container.
+
+```bash
+make run FILE=modules/5_evaluation/scratch.py
+```
+
 ---
 
 ## Bonus Challenge
 
+**Run it:**
+
+```bash
+make m5
+```
 ### Bonus: Create Comprehensive Evaluation Report
 
 **Task**: Extend the existing report with one additional signal (small edit).
@@ -353,6 +431,12 @@ Keep this bonus to ~5 extra lines.
 - Groundedness > 0.80
 - Completeness > 0.75
 
+**Run it:**
+
+```bash
+make m5
+```
+
 ---
 
 ## Key Concepts Summary
@@ -380,3 +464,4 @@ You've completed the RAG Evaluation module! You now know how to:
 ---
 
 **Need help?** Check `solutions.py` or ask the instructor!
+

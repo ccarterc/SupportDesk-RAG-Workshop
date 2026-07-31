@@ -1,5 +1,30 @@
 # Module 6 Exercises: Agentic RAG
 
+
+## How to run these exercises
+
+Everything runs in the container, but you edit files normally on your own
+machine -- the repo is mounted inside, so a save takes effect immediately. There
+is nothing to rebuild or copy between edits.
+
+Run all commands from the repo root, with the container already up (`make up`).
+
+| What you want | Command |
+|---|---|
+| Run this module's demo | `make m6` |
+| Run a file you wrote yourself | `make run FILE=modules/6_agentic_rag/scratch.py` |
+| Undo your edits to the demo | `git checkout modules/6_agentic_rag/demo.py` |
+| Poke around inside the container | `make shell` |
+
+**Finding the code.** Exercises tell you what to search for rather than giving
+line numbers -- the moment you add a line, every number below it is wrong. Use
+your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+
+**When something breaks.** Reset with the `git checkout` above and re-run. You
+cannot damage anything permanently.
+
+---
+
 Complete these exercises after studying `demo.py`. Solutions are in `solutions.py`.
 
 > ✅ **Exercise style for this workshop:** finish each task with **small edits** to existing files (typically 3–15 lines). Avoid creating new large scripts.
@@ -13,7 +38,7 @@ Complete these exercises after studying `demo.py`. Solutions are in `solutions.p
 **Task**: Run the demo and understand agent behavior.
 
 ```bash
-python demo.py
+make m6
 ```
 
 **Observe and answer**:
@@ -46,13 +71,19 @@ print(response)
 | "How many tickets are in each category?" | ? | ? |
 | "How to resolve mobile app crashes" | ? | ? |
 
+**Run it:**
+
+```bash
+make m6
+```
+
 ---
 
 ### Exercise 3: Improve Tool Descriptions
 
 **Task**: Make tool selection more accurate by improving descriptions.
 
-**In tools.py, find the `get_tools()` method and improve descriptions:**
+**Open `modules/6_agentic_rag/tools.py`, search for `def get_tools(`, and improve the descriptions:**
 
 ```python
 Tool(
@@ -72,13 +103,19 @@ Tool(
 - "Users can't log in" (Should use SearchSimilarTickets)
 - "Get TICK-010 details" (Should use GetTicketByID)
 
+**Run it:**
+
+```bash
+make m6
+```
+
 ---
 
 ### Exercise 4: Add Priority Support (Small Patch)
 
 **Task**: Add priority handling with minimal changes (no new class/file).
 
-**In `tools.py`, pick one existing tool and add a small priority-aware branch.**
+**In `modules/6_agentic_rag/tools.py`, pick one existing tool and add a small priority-aware branch.**
 
 Example patch:
 ```python
@@ -88,6 +125,12 @@ if "critical" in query.lower():
 ```
 
 **Test with**: "Show me all critical priority tickets"
+
+**Run it:**
+
+```bash
+make m6
+```
 
 ---
 
@@ -113,13 +156,19 @@ response = run_agent(query)
 - In what order does it use tools?
 - Does it synthesize information from multiple tools?
 
+**Run it:**
+
+```bash
+make m6
+```
+
 ---
 
 ### Exercise 6: Custom Agent Prompt
 
 **Task**: Modify the system prompt to change agent behavior.
 
-**In demo.py, find the system message in `run_agent()` and modify it:**
+**Open `modules/6_agentic_rag/demo.py` and search for `def run_agent(`. The system message is the `SystemMessage(content=...)` just below it -- note there is a second copy further down in `run_conversational_agent()`; edit the first one. Modify it:**
 
 ```python
 SystemMessage(content="""You are an expert support desk assistant.
@@ -139,13 +188,19 @@ ALWAYS follow these rules:
 - Should suggest related topics
 - Should indicate confidence level
 
+**Run it:**
+
+```bash
+make m6
+```
+
 ---
 
 ### Exercise 7: Interactive Conversation Loop
 
 **Task**: Use a tiny in-file loop for quick testing (no new file).
 
-**Add this at the bottom of `demo.py` temporarily:**
+**Add this at the bottom of `modules/6_agentic_rag/demo.py` temporarily:**
 ```python
 while True:
     user_input = input("\nYou: ").strip()
@@ -167,6 +222,12 @@ Keep the loop under ~12 lines.
 1. "What authentication issues have we seen?"
 2. "Tell me more about TICK-001"
 3. "What was the resolution?"
+
+**Run it:**
+
+```bash
+make m6
+```
 
 ---
 
@@ -196,13 +257,24 @@ def get_ticket_by_id(self, ticket_id: str) -> str:
 - "Get ticket TICK-999" (not found)
 - "Get ticket" (empty input)
 
+**Run it:**
+
+```bash
+make m6
+```
+
 ---
 
 ## Bonus Challenges
 
+**Run it:**
+
+```bash
+make m6
+```
 ### Bonus: Conversation with Memory
 
-**Task**: Reuse existing memory code in `demo.py` and change only one setting.
+**Task**: Reuse the memory code in `modules/6_agentic_rag/demo.py` (search for `def run_conversational_agent(`) and change only one setting.
 
 ```python
 # In Part 7, change the window size from k=2 to k=1 and compare behavior.
@@ -213,6 +285,12 @@ apply_window(session_id, k_turns=1)
 1. User: "What issues have we had with databases?"
 2. User: "What was the ticket ID?"  ← Should remember context
 3. User: "How was it resolved?"  ← Should still remember
+
+**Run it:**
+
+```bash
+make m6
+```
 
 ---
 
@@ -246,6 +324,12 @@ for test in test_cases:
 ```
 
 Goal: observe behavior quickly without writing a full evaluator.
+
+**Run it:**
+
+```bash
+make m6
+```
 
 ---
 
@@ -288,3 +372,4 @@ You've completed the Agentic RAG module! You now know how to:
 ---
 
 **Need help?** Check `solutions.py` or ask the instructor!
+

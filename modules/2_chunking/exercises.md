@@ -2,11 +2,36 @@
 
 > ✅ **Exercise style for this workshop:** keep each solution to a **small edit** (usually 3–15 lines) in existing files.
 
+
+## How to run these exercises
+
+Everything runs in the container, but you edit files normally on your own
+machine -- the repo is mounted inside, so a save takes effect immediately. There
+is nothing to rebuild or copy between edits.
+
+Run all commands from the repo root, with the container already up (`make up`).
+
+| What you want | Command |
+|---|---|
+| Run this module's demo | `make m2` |
+| Run a file you wrote yourself | `make run FILE=modules/2_chunking/scratch.py` |
+| Undo your edits to the demo | `git checkout modules/2_chunking/demo.py` |
+| Poke around inside the container | `make shell` |
+
+**Finding the code.** Exercises tell you what to search for rather than giving
+line numbers -- the moment you add a line, every number below it is wrong. Use
+your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+
+**When something breaks.** Reset with the `git checkout` above and re-run. You
+cannot damage anything permanently.
+
+---
+
 ## Exercise 1: Change the Chunk Size (Easy)
 
 **Task**: Modify the demo to use larger chunks.
 
-**In the demo code, find this line** (around line 87):
+**Open `modules/2_chunking/demo.py` and search for `fixed_splitter = CharacterTextSplitter`:**
 ```python
 fixed_splitter = CharacterTextSplitter(
     chunk_size=200,
@@ -24,7 +49,13 @@ fixed_splitter = CharacterTextSplitter(
 )
 ```
 
-**Run the demo and observe**:
+**Run it:**
+
+```bash
+make m2
+```
+
+**Observe:**
 - How many chunks are created now vs before?
 - Are the chunks more meaningful with larger size?
 
@@ -34,7 +65,7 @@ fixed_splitter = CharacterTextSplitter(
 
 **Task**: Test the vector store with a different query.
 
-**In the demo code, find this line** (around line 253):
+**In the same file, search for `query = "Authentication problems`:**
 ```python
 query = "Authentication problems after password reset"
 ```
@@ -44,7 +75,13 @@ query = "Authentication problems after password reset"
 query = "Database is timing out frequently"
 ```
 
-**Run the demo and answer**:
+**Run it:**
+
+```bash
+make m2
+```
+
+**Answer:**
 - Do the results match the new query?
 - What category do the matching tickets belong to?
 
@@ -59,7 +96,7 @@ query = "Database is timing out frequently"
 
 **Task**: Get more search results by changing k.
 
-**In the demo code, find this line** (around line 260):
+**In the same file, search for `chroma_store.similarity_search(query, k=3)`:**
 ```python
 k = 3  # Top-3 results
 ```
@@ -69,7 +106,13 @@ k = 3  # Top-3 results
 k = 5  # Top-5 results
 ```
 
-**Run and observe**: How do results #4 and #5 compare to the top 3?
+**Run it:**
+
+```bash
+make m2
+```
+
+**Observe:** How do results #4 and #5 compare to the top 3?
 
 ---
 
@@ -77,7 +120,7 @@ k = 5  # Top-5 results
 
 **Task**: Search only in a specific category.
 
-**In the demo code, find this line** (around line 355):
+**In the same file, search for `filtered_results = chroma_store`:**
 ```python
 filtered_results = chroma_store.similarity_search(
     query,
@@ -94,7 +137,13 @@ filter={"category": "Performance"}
 filter={"category": "Email"}
 ```
 
-**Run and observe**: Does filtering narrow results appropriately?
+**Run it:**
+
+```bash
+make m2
+```
+
+**Observe:** Does filtering narrow results appropriately?
 
 ---
 
@@ -148,6 +197,12 @@ for size in chunk_sizes:
 - Which chunk size creates the most chunks?
 - At what size do you get roughly 1 chunk per ticket?
 
+**Run it:**
+
+```bash
+make m2
+```
+
 ---
 
 ## Exercise 6: Add Similarity Scores to Results (Medium)
@@ -177,6 +232,12 @@ for i, (doc, score) in enumerate(results_with_scores, 1):
 ```
 
 **Note**: Lower distance = more similar (Chroma uses L2 distance by default)
+
+**Run it:**
+
+```bash
+make m2
+```
 
 ---
 
@@ -239,6 +300,12 @@ for doc in results:
 **Try changing the filter to**:
 - Database + Critical priority
 - Performance + Medium priority
+
+**Run it:**
+
+```bash
+make m2
+```
 
 ---
 
@@ -304,6 +371,12 @@ for doc in results:
 ```
 
 **Why this matters**: In production, you don't rebuild embeddings every time!
+
+**Run it:**
+
+```bash
+make m2
+```
 
 ---
 
@@ -378,6 +451,12 @@ for i, chunk in enumerate(semantic_chunks, 1):
     print(f"  {chunk.page_content[:80]}...")
 ```
 
+**Run it:**
+
+```bash
+make m2
+```
+
 ---
 
 ## Quick Reference
@@ -439,3 +518,4 @@ Ready for **Hour 3: Indexing Strategies**? We'll explore different ways to organ
 ---
 
 **Questions?** Ask the instructor or refer back to the demo code!
+

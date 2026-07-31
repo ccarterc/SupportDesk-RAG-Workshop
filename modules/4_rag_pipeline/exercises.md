@@ -1,5 +1,30 @@
 # Module 4 Exercises: RAG Pipeline
 
+
+## How to run these exercises
+
+Everything runs in the container, but you edit files normally on your own
+machine -- the repo is mounted inside, so a save takes effect immediately. There
+is nothing to rebuild or copy between edits.
+
+Run all commands from the repo root, with the container already up (`make up`).
+
+| What you want | Command |
+|---|---|
+| Run this module's demo | `make m4` |
+| Run a file you wrote yourself | `make run FILE=modules/4_rag_pipeline/scratch.py` |
+| Undo your edits to the demo | `git checkout modules/4_rag_pipeline/demo.py` |
+| Poke around inside the container | `make shell` |
+
+**Finding the code.** Exercises tell you what to search for rather than giving
+line numbers -- the moment you add a line, every number below it is wrong. Use
+your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+
+**When something breaks.** Reset with the `git checkout` above and re-run. You
+cannot damage anything permanently.
+
+---
+
 Complete these exercises after studying `demo.py`. Solutions are in `solutions.py`.
 
 > ✅ **Exercise style for this workshop:** keep each solution to a **small edit** (usually 3–15 lines) in existing files. Avoid creating new modules.
@@ -12,7 +37,7 @@ Complete these exercises after studying `demo.py`. Solutions are in `solutions.p
 
 **Task**: Change the prompt template and observe how it affects answers.
 
-**In demo.py, find this prompt template (around line 155) and try these variations:**
+**Open `modules/4_rag_pipeline/demo.py`, search for `PROMPT = ChatPromptTemplate.from_template`, and edit the `prompt_template` string just above it. Try these variations:**
 
 **Version A: More concise**
 ```python
@@ -59,13 +84,19 @@ Answer (bullet points with sources):"""
 - Which format is easiest to read?
 - Does any version hallucinate more?
 
+**Run it:**
+
+```bash
+make m4
+```
+
 ---
 
 ### Exercise 2: Adjust Retrieval Parameters
 
 **Task**: Change the number of retrieved documents and search type.
 
-**In demo.py, find the retriever setup (around line 120) and try:**
+**In the same file, search for `search_kwargs=` and try:**
 
 ```python
 # Change k from 3 to different values
@@ -88,6 +119,12 @@ retriever = vector_store.as_retriever(
 **Questions**:
 - How does k affect answer quality?
 - When is MMR better than similarity?
+
+**Run it:**
+
+```bash
+make m4
+```
 
 ---
 
@@ -116,6 +153,12 @@ Authentication failures after password reset are caused by stale session tokens 
 The solution is to clear all active sessions and force re-authentication [TICK-001].
 ```
 
+**Run it:**
+
+```bash
+make m4
+```
+
 ---
 
 ### Exercise 4: Build a Fallback System
@@ -138,6 +181,12 @@ def rag_with_validation(query, retriever, llm, min_similarity_score=0.5):
 - High confidence: "authentication problems"
 - Medium confidence: "system performance"
 - Low confidence: "how to bake cookies"
+
+**Run it:**
+
+```bash
+make m4
+```
 
 ---
 
@@ -211,6 +260,12 @@ for doc in docs[1:]:
 | Map-Reduce | N+1 | Slow | Many/large docs |
 | Refine | N | Slowest | Highest quality answers |
 
+**Run it:**
+
+```bash
+make m4
+```
+
 ---
 
 ### Exercise 6: Add Metadata Filtering
@@ -238,6 +293,12 @@ docs = vector_store.similarity_search(
 
 **Test query**: "system problem"
 - Compare results with and without filters
+
+**Run it:**
+
+```bash
+make m4
+```
 
 ---
 
@@ -276,6 +337,12 @@ streaming_chain = (
 
 query = "What causes database connection issues and how do I troubleshoot and prevent them?"
 result = streaming_chain.invoke(query)  # Will print token by token!
+```
+
+**Run it:**
+
+```bash
+make m4
 ```
 
 ---
@@ -350,10 +417,21 @@ result2 = ask_with_history("How do I fix it?", chat_history)  # "it" = auth fail
 result3 = ask_with_history("What about database issues?", chat_history)  # new topic
 ```
 
+**Run it:**
+
+```bash
+make m4
+```
+
 ---
 
 ## Bonus Challenge
 
+**Run it:**
+
+```bash
+make m4
+```
 ### Bonus: Hallucination Detection
 
 **Task**: Add one guardrail with a tiny edit.
@@ -386,6 +464,12 @@ Response:"""
 
 **Test**: Run on one grounded answer and one intentionally unsupported answer.
 
+**Run it:**
+
+```bash
+make m4
+```
+
 ---
 
 ## Production Checklist
@@ -411,3 +495,4 @@ Ready for **Module 5: Evaluation**? Learn how to systematically measure and impr
 ---
 
 **Need help?** Check `solutions.py` or ask the instructor!
+

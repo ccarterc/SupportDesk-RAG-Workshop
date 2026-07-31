@@ -2,11 +2,36 @@
 
 > ✅ **Exercise style for this workshop:** keep each solution to a **small edit** (usually 3–15 lines) in existing files.
 
+
+## How to run these exercises
+
+Everything runs in the container, but you edit files normally on your own
+machine -- the repo is mounted inside, so a save takes effect immediately. There
+is nothing to rebuild or copy between edits.
+
+Run all commands from the repo root, with the container already up (`make up`).
+
+| What you want | Command |
+|---|---|
+| Run this module's demo | `make m3` |
+| Run a file you wrote yourself | `make run FILE=modules/3_indexing/scratch.py` |
+| Undo your edits to the demo | `git checkout modules/3_indexing/demo.py` |
+| Poke around inside the container | `make shell` |
+
+**Finding the code.** Exercises tell you what to search for rather than giving
+line numbers -- the moment you add a line, every number below it is wrong. Use
+your editor's find (Ctrl+F / Cmd+F) on the quoted snippet.
+
+**When something breaks.** Reset with the `git checkout` above and re-run. You
+cannot damage anything permanently.
+
+---
+
 ## Exercise 1: Change the Query (Easy)
 
 **Task**: Modify the demo to search for a different type of issue.
 
-**In the demo code, find this line** (around line 79):
+**Open `modules/3_indexing/demo.py` and search for `query = "How do I fix authentication`:**
 ```python
 query = "How do I fix authentication issues after password reset?"
 ```
@@ -16,7 +41,13 @@ query = "How do I fix authentication issues after password reset?"
 query = "Database connection is timing out"
 ```
 
-**Run the demo and observe**:
+**Run it:**
+
+```bash
+make m3
+```
+
+**Observe:**
 - How do the results differ between Vector, Summary, Tree, and Keyword indexes?
 - Which index type gives the most relevant answer?
 
@@ -31,7 +62,7 @@ query = "Database connection is timing out"
 
 **Task**: Get more search results from the Vector Index.
 
-**In the demo code, find this line** (around line 92):
+**In the same file, search for `vector_query_engine = vector_index`:**
 ```python
 vector_query_engine = vector_index.as_query_engine(similarity_top_k=3)
 ```
@@ -41,7 +72,13 @@ vector_query_engine = vector_index.as_query_engine(similarity_top_k=3)
 vector_query_engine = vector_index.as_query_engine(similarity_top_k=5)
 ```
 
-**Run and observe**: Does getting more source documents improve the answer quality?
+**Run it:**
+
+```bash
+make m3
+```
+
+**Observe:** Does getting more source documents improve the answer quality?
 
 ---
 
@@ -49,7 +86,7 @@ vector_query_engine = vector_index.as_query_engine(similarity_top_k=5)
 
 **Task**: Modify how many branches the Tree Index explores.
 
-**In the demo code, find this line** (around line 158):
+**In the same file, search for `tree_query_engine = tree_index`:**
 ```python
 tree_query_engine = tree_index.as_query_engine(child_branch_factor=2)
 ```
@@ -63,7 +100,13 @@ tree_query_engine = tree_index.as_query_engine(child_branch_factor=1)
 tree_query_engine = tree_index.as_query_engine(child_branch_factor=3)
 ```
 
-**Run and observe**: 
+**Run it:**
+
+```bash
+make m3
+```
+
+**Observe:** 
 - How does `child_branch_factor=1` affect the answer?
 - Is `child_branch_factor=3` noticeably slower?
 
@@ -73,7 +116,7 @@ tree_query_engine = tree_index.as_query_engine(child_branch_factor=3)
 
 **Task**: See how Keyword Index handles exact term matching.
 
-**Add this code after the Keyword Index section** (around line 195):
+**In the same file, search for `keyword_query_engine = keyword_index` and add this just below the block that prints its response:**
 ```python
 # Test keyword-specific query
 keyword_query = "TICK-001"
@@ -82,7 +125,13 @@ keyword_response = keyword_query_engine.query(keyword_query)
 print(f"Result: {keyword_response.response}")
 ```
 
-**Run and observe**: Does the Keyword Index find the exact ticket ID?
+**Run it:**
+
+```bash
+make m3
+```
+
+**Observe:** Does the Keyword Index find the exact ticket ID?
 
 ---
 
@@ -150,6 +199,12 @@ for query in test_queries:
 
 **Answer**: Which index works best for "TICK-005" (exact match) vs "authentication login problem" (semantic)?
 
+**Run it:**
+
+```bash
+make m3
+```
+
 ---
 
 ## Exercise 6: Save and Load an Index (Medium)
@@ -207,6 +262,12 @@ print(f"Result: {response}")
 ```
 
 **Why this matters**: Building indexes is expensive (API calls). Persisting saves time and money!
+
+**Run it:**
+
+```bash
+make m3
+```
 
 ---
 
@@ -271,6 +332,12 @@ print(f"  {filtered_response}")
 - `value="Database"`
 - `value="Performance"`
 
+**Run it:**
+
+```bash
+make m3
+```
+
 ---
 
 ## Exercise 8: Benchmark Index Build Time (Medium)
@@ -328,6 +395,12 @@ print(f"Summary Index: {summary_time:.2f}s")
 print(f"\n→ Vector Index takes longer because it generates embeddings for all documents")
 print(f"→ Keyword Index uses LLM to extract keywords from each document")
 print(f"→ Summary Index is just storing documents (work happens at query time)")
+```
+
+**Run it:**
+
+```bash
+make m3
 ```
 
 ---
@@ -399,6 +472,12 @@ for node in vector_nodes + keyword_nodes:
 print(f"\nHybrid Results (combined): {hybrid_results[:5]}")
 ```
 
+**Run it:**
+
+```bash
+make m3
+```
+
 ---
 
 ## Quick Reference
@@ -453,3 +532,4 @@ Ready for **Module 4: RAG Pipeline**? We'll combine indexing with LLM generation
 ---
 
 **Questions?** Ask the instructor or refer back to the demo code!
+
