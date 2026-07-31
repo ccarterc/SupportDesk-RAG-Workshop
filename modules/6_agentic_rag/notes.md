@@ -58,7 +58,7 @@ while not done:
 Tool(
     name="ToolName",
     func=function_to_call,
-    description="Clear description of what this tool does"
+    description="Clear description of what this tool does",
 )
 ```
 
@@ -75,7 +75,7 @@ Tool(
     func=search_function,
     description="""Search for similar support tickets.
     Input: Problem description or question.
-    Use this for 'how to fix' queries."""
+    Use this for 'how to fix' queries.""",
 )
 ```
 
@@ -95,20 +95,24 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 
 store = {}
 
-def get_history(session_id: str):
-   return store.setdefault(session_id, InMemoryChatMessageHistory())
 
-prompt = ChatPromptTemplate.from_messages([
-   ("system", "You are SupportDesk AI."),
-   MessagesPlaceholder("history"),
-   ("human", "{question}")
-])
+def get_history(session_id: str):
+    return store.setdefault(session_id, InMemoryChatMessageHistory())
+
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "You are SupportDesk AI."),
+        MessagesPlaceholder("history"),
+        ("human", "{question}"),
+    ]
+)
 
 chain_with_history = RunnableWithMessageHistory(
-   prompt | llm,
-   get_history,
-   input_messages_key="question",
-   history_messages_key="history"
+    prompt | llm,
+    get_history,
+    input_messages_key="question",
+    history_messages_key="history",
 )
 ```
 
@@ -119,9 +123,10 @@ chain_with_history = RunnableWithMessageHistory(
 ```python
 WINDOW_TURNS = 3
 
+
 def apply_window(session_id: str):
-   history = store[session_id]
-   history.messages = history.messages[-(WINDOW_TURNS * 2):]
+    history = store[session_id]
+    history.messages = history.messages[-(WINDOW_TURNS * 2) :]
 ```
 
 **Strategy C — Summary-style history (summary-like):**
@@ -131,15 +136,18 @@ def apply_window(session_id: str):
 ```python
 from langchain_core.messages import SystemMessage
 
-def compress_older_turns(session_id: str, keep_recent_turns: int = 2):
-   history = store[session_id]
-   recent = keep_recent_turns * 2
-   if len(history.messages) <= recent + 1:
-      return
 
-   older = history.messages[:-recent]
-   summary = " | ".join(f"{m.type}: {m.content[:80]}" for m in older)
-   history.messages = [SystemMessage(content=f"Summary: {summary[:600]}")] + history.messages[-recent:]
+def compress_older_turns(session_id: str, keep_recent_turns: int = 2):
+    history = store[session_id]
+    recent = keep_recent_turns * 2
+    if len(history.messages) <= recent + 1:
+        return
+
+    older = history.messages[:-recent]
+    summary = " | ".join(f"{m.type}: {m.content[:80]}" for m in older)
+    history.messages = [
+        SystemMessage(content=f"Summary: {summary[:600]}")
+    ] + history.messages[-recent:]
 ```
 
 **Comparison:**
@@ -171,22 +179,13 @@ def compress_older_turns(session_id: str, keep_recent_turns: int = 2):
 ### Pattern 1: RAG as Primary Tool
 ```python
 # Agent mainly uses RAG, but can do other things
-tools = [
-    rag_tool,
-    fallback_tool,
-    clarification_tool
-]
+tools = [rag_tool, fallback_tool, clarification_tool]
 ```
 
 ### Pattern 2: Multi-Source Retrieval
 ```python
 # Agent combines multiple retrieval sources
-tools = [
-    vector_search_tool,
-    keyword_search_tool,
-    database_lookup_tool,
-    api_call_tool
-]
+tools = [vector_search_tool, keyword_search_tool, database_lookup_tool, api_call_tool]
 ```
 
 ### Pattern 3: Reasoning + Retrieval

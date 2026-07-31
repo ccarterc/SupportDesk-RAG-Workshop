@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Hour 1 Solutions: Embeddings & Similarity Search
 =================================================
@@ -8,23 +7,24 @@ Run each section independently or the whole file.
 """
 
 import json
-import time
-import numpy as np
 import os
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from dotenv import load_dotenv
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
-import matplotlib.pyplot as plt
-from dotenv import load_dotenv
 
 load_dotenv()
 
 # Initialize client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-model = os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
 # Load data (used by multiple exercises)
 print("Loading data...")
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 
 texts = [f"{t['title']}. {t['description']}" for t in tickets]
@@ -84,11 +84,13 @@ for rank, idx in enumerate(top_indices, 1):
     score = similarities[idx]
     ticket = tickets[idx]
     print(f"#{rank} [{score:.4f}] {ticket['title']}")
-    
+
     if below_threshold_rank is None and score < 0.5:
         below_threshold_rank = rank
 
-print(f"\n→ Score drops below 0.5 at rank: {below_threshold_rank or 'Never (all above 0.5)'}")
+print(
+    f"\n→ Score drops below 0.5 at rank: {below_threshold_rank or 'Never (all above 0.5)'}"
+)
 
 
 # ============================================================================
@@ -100,32 +102,34 @@ print("=" * 80)
 
 # Solution: Add "if score < 0.5: continue" in the loop
 
+
 def search_with_threshold(query_text, threshold=0.5):
     query_response = client.embeddings.create(input=[query_text], model=model)
     query_embedding = np.array([query_response.data[0].embedding])
     similarities = cosine_similarity(query_embedding, embeddings)[0]
-    
+
     top_indices = np.argsort(similarities)[::-1][:10]
-    
+
     print(f"\nQuery: '{query_text}' (threshold: {threshold})")
     print("-" * 50)
-    
+
     count = 0
     for rank, idx in enumerate(top_indices, 1):
         ticket = tickets[idx]
         score = similarities[idx]
-        
+
         # THE SOLUTION: Skip results below threshold
         if score < threshold:
             continue
-        
+
         count += 1
         print(f"#{rank} [{score:.4f}] {ticket['title']}")
-    
+
     if count == 0:
         print("No relevant tickets found above threshold.")
     else:
         print(f"\n→ {count} tickets above threshold")
+
 
 # Test with relevant query
 search_with_threshold("login authentication problem")
@@ -150,7 +154,7 @@ for q in [query1, query2]:
     q_emb = np.array([response.data[0].embedding])
     sims = cosine_similarity(q_emb, embeddings)[0]
     top_idx = np.argmax(sims)
-    
+
     print(f"\nQuery: '{q}'")
     print(f"  Best match: {tickets[top_idx]['title']}")
     print(f"  Category: {tickets[top_idx]['category']}")
@@ -166,10 +170,10 @@ print("=" * 80)
 
 # These mean the SAME thing but use DIFFERENT words
 test_texts = [
-    "User authentication failed",      # Original
-    "Login credentials rejected",       # Same meaning, different words
-    "Cannot sign in to account",        # Same meaning, different words
-    "Database connection timeout",      # DIFFERENT topic
+    "User authentication failed",  # Original
+    "Login credentials rejected",  # Same meaning, different words
+    "Cannot sign in to account",  # Same meaning, different words
+    "Database connection timeout",  # DIFFERENT topic
 ]
 
 # Generate embeddings
@@ -200,29 +204,31 @@ print("\n" + "=" * 80)
 print("EXERCISE 6: Filter by Category")
 print("=" * 80)
 
+
 def search_with_category(query, category_filter=None, top_k=5):
     """Search tickets, optionally filtering by category"""
     # Get query embedding
     response = client.embeddings.create(input=[query], model=model)
     query_emb = np.array([response.data[0].embedding])
-    
+
     # Calculate similarities
     similarities = cosine_similarity(query_emb, embeddings)[0]
-    
+
     # Get results with category filter
     results = []
     for idx in np.argsort(similarities)[::-1]:
         ticket = tickets[idx]
-        
+
         # THE SOLUTION: Skip if category doesn't match filter
-        if category_filter and ticket['category'] != category_filter:
+        if category_filter and ticket["category"] != category_filter:
             continue
-        
+
         results.append((ticket, similarities[idx]))
         if len(results) >= top_k:
             break
-    
+
     return results
+
 
 # Test it
 print("\nAll categories:")
@@ -230,7 +236,9 @@ for ticket, score in search_with_category("login problem"):
     print(f"  {score:.3f} [{ticket['category']}] {ticket['title']}")
 
 print("\nOnly 'Authentication' category:")
-for ticket, score in search_with_category("login problem", category_filter="Authentication"):
+for ticket, score in search_with_category(
+    "login problem", category_filter="Authentication"
+):
     print(f"  {score:.3f} [{ticket['category']}] {ticket['title']}")
 
 
@@ -243,7 +251,7 @@ print("=" * 80)
 
 batch_texts = [
     "Password reset not working",
-    "Database connection timeout", 
+    "Database connection timeout",
     "App crashes on startup",
     "Payment declined error",
     "Email notifications delayed",
@@ -265,7 +273,7 @@ time_fast = time.time() - start
 print(f"  Time: {time_fast:.2f} seconds")
 
 # Compare
-speedup = time_slow / time_fast if time_fast > 0 else float('inf')
+speedup = time_slow / time_fast if time_fast > 0 else float("inf")
 print(f"\n✓ Batch is {speedup:.1f}x faster!")
 print("  Always batch your embeddings in production!")
 
@@ -279,7 +287,7 @@ print("=" * 80)
 
 # Use first 10 tickets
 sample_tickets = tickets[:10]
-sample_texts = [t['title'] for t in sample_tickets]
+sample_texts = [t["title"] for t in sample_tickets]
 
 # Generate embeddings
 response = client.embeddings.create(input=sample_texts, model=model)
@@ -290,24 +298,30 @@ sim_matrix = cosine_similarity(sample_embeddings)
 
 # Create heatmap
 plt.figure(figsize=(12, 10))
-plt.imshow(sim_matrix, cmap='RdYlGn', vmin=0, vmax=1)
-plt.colorbar(label='Cosine Similarity')
+plt.imshow(sim_matrix, cmap="RdYlGn", vmin=0, vmax=1)
+plt.colorbar(label="Cosine Similarity")
 
 # Add labels
 labels = [f"{t['ticket_id']}\n({t['category'][:8]})" for t in sample_tickets]
-plt.xticks(range(10), labels, rotation=45, ha='right', fontsize=8)
+plt.xticks(range(10), labels, rotation=45, ha="right", fontsize=8)
 plt.yticks(range(10), labels, fontsize=8)
 
 # Add values to cells
 for i in range(10):
     for j in range(10):
-        plt.text(j, i, f'{sim_matrix[i, j]:.2f}', 
-                ha='center', va='center', fontsize=8,
-                color='white' if sim_matrix[i, j] < 0.5 else 'black')
+        plt.text(
+            j,
+            i,
+            f"{sim_matrix[i, j]:.2f}",
+            ha="center",
+            va="center",
+            fontsize=8,
+            color="white" if sim_matrix[i, j] < 0.5 else "black",
+        )
 
-plt.title('Ticket Similarity Matrix\n(First 10 Tickets)')
+plt.title("Ticket Similarity Matrix\n(First 10 Tickets)")
 plt.tight_layout()
-plt.savefig('solution_similarity_heatmap.png', dpi=150, bbox_inches='tight')
+plt.savefig("solution_similarity_heatmap.png", dpi=150, bbox_inches="tight")
 print("✓ Saved as solution_similarity_heatmap.png")
 plt.show()
 

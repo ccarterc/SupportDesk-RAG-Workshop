@@ -141,15 +141,19 @@ python --version
 ❌ OLD (deprecated):
 ```python
 from langchain.chains import RetrievalQA
+
 qa_chain = RetrievalQA.from_chain_type(...)
 ```
 
 ✅ NEW (use this):
 ```python
 from langchain_core.runnables import RunnablePassthrough
+
 chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt | llm | StrOutputParser()
+    | prompt
+    | llm
+    | StrOutputParser()
 )
 ```
 

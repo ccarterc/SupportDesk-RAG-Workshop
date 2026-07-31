@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Module 3 Solutions: Indexing Strategies
 =======================================
@@ -10,38 +9,44 @@ and may take 1-2 minutes to complete. This is expected behavior.
 """
 
 import json
-import time
-import os
-import shutil
 import logging
+import shutil
+import time
+
 from dotenv import load_dotenv
 from llama_index.core import (
-    VectorStoreIndex, SummaryIndex, TreeIndex, KeywordTableIndex,
-    Document, Settings, StorageContext, load_index_from_storage
+    Document,
+    KeywordTableIndex,
+    Settings,
+    StorageContext,
+    SummaryIndex,
+    TreeIndex,
+    VectorStoreIndex,
+    load_index_from_storage,
 )
-from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
+from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
 # Configure LlamaIndex
-Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-5.6-luna')
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5.6-luna")
 
 # Load data
 print("Loading data...")
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         text=f"Title: {t['title']}\nDescription: {t['description']}\nResolution: {t['resolution']}",
         metadata={
-            'ticket_id': t['ticket_id'],
-            'category': t['category'],
-            'priority': t['priority']
-        }
+            "ticket_id": t["ticket_id"],
+            "category": t["category"],
+            "priority": t["priority"],
+        },
     )
     for t in tickets
 ]
@@ -67,7 +72,7 @@ query_engine = vector_index.as_query_engine(similarity_top_k=3)
 queries = [
     "How do I fix authentication issues after password reset?",  # Original
     "Database connection is timing out",  # Changed
-    "Email notifications not being delivered"
+    "Email notifications not being delivered",
 ]
 
 for query in queries:
@@ -88,13 +93,13 @@ query = "authentication login problem"
 # top_k = 3 (original)
 engine_3 = vector_index.as_query_engine(similarity_top_k=3)
 response_3 = engine_3.query(query)
-print(f"\nWith similarity_top_k=3:")
+print("\nWith similarity_top_k=3:")
 print(f"  Sources: {len(response_3.source_nodes)} documents used")
 
 # top_k = 5 (changed)
 engine_5 = vector_index.as_query_engine(similarity_top_k=5)
 response_5 = engine_5.query(query)
-print(f"\nWith similarity_top_k=5:")
+print("\nWith similarity_top_k=5:")
 print(f"  Sources: {len(response_5.source_nodes)} documents used")
 
 
@@ -114,22 +119,22 @@ tree_index = TreeIndex.from_documents(documents, num_children=5, show_progress=T
 print("✓ Tree Index built")
 
 # Show tree structure
-print("\n" + "-"*60)
+print("\n" + "-" * 60)
 print("TREE INDEX STRUCTURE")
-print("-"*60)
+print("-" * 60)
 all_nodes = tree_index.index_struct.all_nodes
 root_nodes = tree_index.index_struct.root_nodes
 print(f"Total nodes in tree: {len(all_nodes)}")
 print(f"Root nodes: {len(root_nodes)}")
 
+
 # Display tree hierarchy
 def display_tree_structure(tree_index, max_depth=3):
     """Display the tree structure with node summaries"""
-    from llama_index.core.schema import IndexNode
-    
+
     all_nodes = tree_index.index_struct.all_nodes
     root_node_ids = tree_index.index_struct.root_nodes
-    
+
     def get_node_info(node_id, depth=0):
         if depth > max_depth:
             return
@@ -137,76 +142,80 @@ def display_tree_structure(tree_index, max_depth=3):
         node_info = all_nodes.get(node_id)
         if node_info:
             # Get the summary text (truncated)
-            summary = str(node_info)[:60].replace('\n', ' ')
+            summary = str(node_info)[:60].replace("\n", " ")
             # node_id can be int or string
             node_id_str = str(node_id)[:8] if len(str(node_id)) > 8 else str(node_id)
             print(f"{indent}├── [Node {node_id_str}] {summary}...")
-            
+
             # Check for children
-            children = getattr(node_info, 'child_indices', [])
+            children = getattr(node_info, "child_indices", [])
             if children:
                 print(f"{indent}    └── Children: {len(children)} branches")
                 for child_id in children[:3]:  # Show max 3 children
                     get_node_info(child_id, depth + 1)
                 if len(children) > 3:
                     print(f"{indent}        ... and {len(children) - 3} more")
-    
+
     print("\nTree Hierarchy (showing first 3 levels):")
     for i, root_id in enumerate(list(root_node_ids.keys())[:3]):
-        print(f"\nRoot {i+1}:")
+        print(f"\nRoot {i + 1}:")
         get_node_info(root_id)
     if len(root_node_ids) > 3:
         print(f"\n... and {len(root_node_ids) - 3} more root nodes")
 
+
 display_tree_structure(tree_index)
 
 query = "How do I fix authentication issues?"
-print(f"\n{'='*60}")
+print(f"\n{'=' * 60}")
 print(f"Query: '{query}'")
-print(f"{'='*60}")
+print(f"{'=' * 60}")
 
 # Enable logging to see branch exploration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("llama_index.indices.tree")
 
+
 def query_with_branch_info(tree_index, query, branch_factor):
     """Query tree index and show which branches/nodes were explored"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TESTING: child_branch_factor={branch_factor}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"→ This means the LLM will select the top {branch_factor} most relevant")
-    print(f"  branches at each level of the tree to explore.")
-    
+    print("  branches at each level of the tree to explore.")
+
     tree_engine = tree_index.as_query_engine(
-        child_branch_factor=branch_factor,
-        verbose=True
+        child_branch_factor=branch_factor, verbose=True
     )
-    
+
     start = time.time()
     response = tree_engine.query(query)
     elapsed = time.time() - start
-    
+
     print(f"\n  Query time: {elapsed:.2f}s")
-    
+
     # Show source nodes that were retrieved
-    print(f"\n  BRANCHES EXPLORED - Source nodes retrieved ({len(response.source_nodes)}):")
+    print(
+        f"\n  BRANCHES EXPLORED - Source nodes retrieved ({len(response.source_nodes)}):"
+    )
     for i, node in enumerate(response.source_nodes, 1):
-        node_text = node.node.get_content()[:80].replace('\n', ' ')
-        raw_id = getattr(node.node, 'node_id', 'N/A')
-        node_id = str(raw_id)[:8] if raw_id != 'N/A' else 'N/A'
+        node_text = node.node.get_content()[:80].replace("\n", " ")
+        raw_id = getattr(node.node, "node_id", "N/A")
+        node_id = str(raw_id)[:8] if raw_id != "N/A" else "N/A"
         score = f"{node.score:.4f}" if node.score else "N/A"
         print(f"    {i}. Node [{node_id}] score={score}")
         print(f"       Text: {node_text}...")
-    
-    print(f"\n  Final Answer:")
+
+    print("\n  Final Answer:")
     print(f"  {str(response)[:300]}...")
-    
+
     return response
 
+
 # Test with different branch factors
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("COMPARISON: How branch_factor affects exploration")
-print("="*60)
+print("=" * 60)
 print("branch_factor=1: Most focused (fastest, may miss info)")
 print("branch_factor=2: Balanced (moderate speed & coverage)")
 print("branch_factor=3: Broadest (slowest, most thorough)")
@@ -215,9 +224,9 @@ response_1 = query_with_branch_info(tree_index, query, branch_factor=1)
 response_2 = query_with_branch_info(tree_index, query, branch_factor=2)
 response_3 = query_with_branch_info(tree_index, query, branch_factor=3)
 
-print("\n" + "-"*60)
+print("\n" + "-" * 60)
 print("SUMMARY")
-print("-"*60)
+print("-" * 60)
 print(f"branch_factor=1: {len(response_1.source_nodes)} source nodes retrieved")
 print(f"branch_factor=2: {len(response_2.source_nodes)} source nodes retrieved")
 print(f"branch_factor=3: {len(response_3.source_nodes)} source nodes retrieved")
@@ -252,23 +261,23 @@ print("=" * 80)
 
 test_queries = [
     "authentication login problem",  # Semantic query
-    "database timeout error",        # Semantic query
-    "TICK-005"                       # Exact match query
+    "database timeout error",  # Semantic query
+    "TICK-005",  # Exact match query
 ]
 
 for query in test_queries:
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Query: '{query}'")
     print("=" * 60)
-    
+
     # Vector Index
     vec_response = vector_index.as_query_engine(similarity_top_k=3).query(query)
-    print(f"\nVector Index:")
+    print("\nVector Index:")
     print(f"  {str(vec_response)[:150]}...")
-    
+
     # Keyword Index
     kw_response = keyword_index.as_query_engine().query(query)
-    print(f"\nKeyword Index:")
+    print("\nKeyword Index:")
     print(f"  {str(kw_response)[:150]}...")
 
 
@@ -320,16 +329,16 @@ print(f"  {str(response)[:150]}...")
 categories = ["Authentication", "Database", "Performance"]
 
 for category in categories:
-    filters = MetadataFilters(filters=[
-        ExactMatchFilter(key="category", value=category)
-    ])
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="category", value=category)]
+    )
     filtered_engine = vector_index.as_query_engine(similarity_top_k=3, filters=filters)
-    
+
     try:
         filtered_response = filtered_engine.query(query)
         print(f"\nWith '{category}' filter:")
         print(f"  {str(filtered_response)[:100]}...")
-    except Exception as e:
+    except Exception:  # noqa: BLE001 - query engines can raise provider-specific errors
         print(f"\nWith '{category}' filter: No matching documents")
 
 
@@ -360,9 +369,9 @@ _ = SummaryIndex.from_documents(documents)
 summary_time = time.time() - start
 print(f"Summary Index: {summary_time:.2f}s")
 
-print(f"\n→ Vector Index takes longer because it generates embeddings")
-print(f"→ Keyword Index uses LLM to extract keywords")
-print(f"→ Summary Index just stores documents (work at query time)")
+print("\n→ Vector Index takes longer because it generates embeddings")
+print("→ Keyword Index uses LLM to extract keywords")
+print("→ Summary Index just stores documents (work at query time)")
 
 
 # ============================================================================
@@ -395,7 +404,7 @@ for i, node in enumerate(keyword_nodes[:3], 1):
 seen = set()
 hybrid_results = []
 for node in vector_nodes + keyword_nodes:
-    ticket_id = node.node.metadata.get('ticket_id')
+    ticket_id = node.node.metadata.get("ticket_id")
     if ticket_id and ticket_id not in seen:
         seen.add(ticket_id)
         hybrid_results.append(ticket_id)

@@ -80,9 +80,7 @@ retriever = index.as_retriever(similarity_top_k=3)
 # Use in LangChain chain
 llm = ChatOpenAI(model="gpt-5.6-luna")
 qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    retriever=retriever,
-    return_source_documents=True
+    llm=llm, retriever=retriever, return_source_documents=True
 )
 
 # Query as usual
@@ -183,7 +181,7 @@ vector_index = VectorStoreIndex.from_documents(docs)
 vector_engine = vector_index.as_query_engine(similarity_top_k=3)
 # Retrieval: Direct cosine similarity, return top 3
 
-# Strategy 2: Tree hierarchy (structured traversal)  
+# Strategy 2: Tree hierarchy (structured traversal)
 tree_index = TreeIndex.from_documents(docs)
 tree_engine = tree_index.as_query_engine()
 # Retrieval: Navigate tree structure, drill down to leaves
@@ -193,7 +191,7 @@ keyword_index = KeywordTableIndex.from_documents(docs)
 keyword_engine = keyword_index.as_query_engine()
 # Retrieval: Extract keywords, match against document keywords
 
-# Same docs, same vectors (where applicable), 
+# Same docs, same vectors (where applicable),
 # but DIFFERENT RETRIEVAL LOGIC yields different results!
 ```
 
@@ -292,7 +290,7 @@ Scale: Works well up to millions of documents
 query_engine = index.as_query_engine(
     similarity_top_k=3,  # Number of chunks to retrieve
     response_mode="compact",  # How to synthesize answer
-    streaming=False  # Enable streaming responses
+    streaming=False,  # Enable streaming responses
 )
 ```
 
@@ -357,9 +355,7 @@ from llama_index.core import SummaryIndex
 index = SummaryIndex.from_documents(docs)
 
 # Query with tree_summarize for comprehensive answers
-query_engine = index.as_query_engine(
-    response_mode="tree_summarize"
-)
+query_engine = index.as_query_engine(response_mode="tree_summarize")
 response = query_engine.query("What are common auth issues?")
 ```
 
@@ -1017,7 +1013,7 @@ from llama_index.core import TreeIndex
 index = TreeIndex.from_documents(
     docs,
     num_children=10,  # Branching factor
-    build_tree=True
+    build_tree=True,
 )
 
 # Query (traverses tree)
@@ -1029,7 +1025,7 @@ query_engine = index.as_query_engine(
 response = query_engine.query("What is Newton's Second Law?")
 # Traverses: Root → Chapter 1 → Section 1.1 → Leaf (F=ma)
 
-# Multi-path query  
+# Multi-path query
 response = query_engine.query("Explain force and electromagnetic induction")
 # Traverses: Root → Chapter 1 + Chapter 2 → Multiple sections → Multiple leaves
 ```
@@ -1090,7 +1086,7 @@ TreeIndex.from_documents(
     docs,
     num_children=10,  # Branching factor (lower = deeper tree)
     build_tree=True,  # Auto-build hierarchy
-    use_async=True  # Parallel construction
+    use_async=True,  # Parallel construction
 )
 ```
 
@@ -1204,6 +1200,7 @@ Scale: Any size, very fast, no LLM needed for retrieval
 ```python
 # Good queries for keyword index:
 "TICK-001"  # Exact ID
+
 "HTTP 503 error"  # Specific error code
 "function parse_json"  # Code identifier
 
@@ -1270,6 +1267,7 @@ keyword_index = KeywordTableIndex.from_documents(docs)
 vector_nodes = vector_index.as_retriever(similarity_top_k=5).retrieve(query)
 keyword_nodes = keyword_index.as_retriever().retrieve(query)
 
+
 # Combine using RRF
 def reciprocal_rank_fusion(results_list, k=60):
     scores = {}
@@ -1277,11 +1275,12 @@ def reciprocal_rank_fusion(results_list, k=60):
         for rank, node in enumerate(results, 1):
             node_id = node.node_id
             if node_id not in scores:
-                scores[node_id] = {'node': node, 'score': 0}
-            scores[node_id]['score'] += 1 / (rank + k)
-    
-    sorted_nodes = sorted(scores.values(), key=lambda x: x['score'], reverse=True)
-    return [item['node'] for item in sorted_nodes]
+                scores[node_id] = {"node": node, "score": 0}
+            scores[node_id]["score"] += 1 / (rank + k)
+
+    sorted_nodes = sorted(scores.values(), key=lambda x: x["score"], reverse=True)
+    return [item["node"] for item in sorted_nodes]
+
 
 # Get final results
 hybrid_results = reciprocal_rank_fusion([vector_nodes, keyword_nodes])
@@ -1344,7 +1343,7 @@ Scale: Any size, but 2x retrieval cost
 
 **1. Reciprocal Rank Fusion (RRF)** - Recommended
 ```python
-score = 1/(rank + k) + 1/(rank + k)
+score = 1 / (rank + k) + 1 / (rank + k)
 # k=60 is a good default
 ```
 
@@ -1464,8 +1463,8 @@ graph = ComposableGraph.from_indices(
     index_summaries=[
         "Authentication and login issues",
         "Performance and latency problems",
-        "API reference and codes"
-    ]
+        "API reference and codes",
+    ],
 )
 
 # Query routes automatically
@@ -1482,18 +1481,23 @@ from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
 
 # Create index with metadata
 docs = [
-    Document(text=text, metadata={
-        "category": "authentication",
-        "priority": "high",
-        "date": "2024-01-15"
-    })
+    Document(
+        text=text,
+        metadata={
+            "category": "authentication",
+            "priority": "high",
+            "date": "2024-01-15",
+        },
+    )
 ]
 
 # Query with filters
-filters = MetadataFilters(filters=[
-    ExactMatchFilter(key="category", value="authentication"),
-    ExactMatchFilter(key="priority", value="high")
-])
+filters = MetadataFilters(
+    filters=[
+        ExactMatchFilter(key="category", value="authentication"),
+        ExactMatchFilter(key="priority", value="high"),
+    ]
+)
 
 query_engine = index.as_query_engine(filters=filters)
 ```
@@ -1507,7 +1511,7 @@ query_engine = index.as_query_engine(filters=filters)
 index = VectorStoreIndex.from_documents(
     docs,
     show_progress=True,  # Progress bar
-    use_async=True  # Parallel embedding
+    use_async=True,  # Parallel embedding
 )
 
 # Batch embedding
@@ -1525,14 +1529,16 @@ index = VectorStoreIndex.from_documents(docs, service_context=service_context)
 # Cache query results
 from functools import lru_cache
 
+
 @lru_cache(maxsize=1000)
 def cached_query(query_text):
     return query_engine.query(query_text)
 
+
 # Adjust retrieval parameters
 query_engine = index.as_query_engine(
     similarity_top_k=3,  # Fewer chunks = faster
-    response_mode="compact"  # Less LLM processing
+    response_mode="compact",  # Less LLM processing
 )
 ```
 
@@ -1555,34 +1561,30 @@ index = load_index_from_storage(storage_context)
 
 ```python
 def evaluate_index(index, test_queries):
-    metrics = {
-        'precision': [],
-        'recall': [],
-        'latency': []
-    }
-    
+    metrics = {"precision": [], "recall": [], "latency": []}
+
     for query, relevant_ids in test_queries:
         start = time.time()
         results = index.as_retriever(similarity_top_k=5).retrieve(query)
         latency = time.time() - start
-        
-        retrieved_ids = [r.node.metadata['id'] for r in results]
-        
+
+        retrieved_ids = [r.node.metadata["id"] for r in results]
+
         # Precision@K
         relevant_retrieved = len(set(retrieved_ids) & set(relevant_ids))
         precision = relevant_retrieved / len(retrieved_ids)
-        
+
         # Recall
         recall = relevant_retrieved / len(relevant_ids)
-        
-        metrics['precision'].append(precision)
-        metrics['recall'].append(recall)
-        metrics['latency'].append(latency)
-    
+
+        metrics["precision"].append(precision)
+        metrics["recall"].append(recall)
+        metrics["latency"].append(latency)
+
     return {
-        'avg_precision': np.mean(metrics['precision']),
-        'avg_recall': np.mean(metrics['recall']),
-        'avg_latency': np.mean(metrics['latency'])
+        "avg_precision": np.mean(metrics["precision"]),
+        "avg_recall": np.mean(metrics["recall"]),
+        "avg_latency": np.mean(metrics["latency"]),
     }
 ```
 
@@ -1591,16 +1593,18 @@ def evaluate_index(index, test_queries):
 ```python
 # Compare strategies
 strategies = {
-    'vector': VectorStoreIndex.from_documents(docs),
-    'tree': TreeIndex.from_documents(docs),
-    'hybrid': create_hybrid_index(docs)
+    "vector": VectorStoreIndex.from_documents(docs),
+    "tree": TreeIndex.from_documents(docs),
+    "hybrid": create_hybrid_index(docs),
 }
 
 for name, index in strategies.items():
     metrics = evaluate_index(index, test_queries)
-    print(f"{name}: P={metrics['avg_precision']:.3f}, "
-          f"R={metrics['avg_recall']:.3f}, "
-          f"Latency={metrics['avg_latency']:.2f}s")
+    print(
+        f"{name}: P={metrics['avg_precision']:.3f}, "
+        f"R={metrics['avg_recall']:.3f}, "
+        f"Latency={metrics['avg_latency']:.2f}s"
+    )
 ```
 
 ## Best Practices
@@ -1685,23 +1689,17 @@ docs = [Document(text=text, metadata=meta) for text, meta in doc_data]
 index = VectorStoreIndex.from_documents(docs)
 
 # Step 2: Convert to LangChain retriever
-retriever = index.as_retriever(
-    similarity_top_k=3,
-    vector_store_query_mode="default"
-)
+retriever = index.as_retriever(similarity_top_k=3, vector_store_query_mode="default")
 
 # Step 3: Use in LangChain chain
 llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
 qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=retriever,
-    return_source_documents=True
+    llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True
 )
 
 # Step 4: Query
 result = qa_chain({"query": "How to fix authentication issues?"})
-print(result['result'])
+print(result["result"])
 print(f"Sources: {[doc.metadata for doc in result['source_documents']]}")
 ```
 
@@ -1711,35 +1709,37 @@ print(f"Sources: {[doc.metadata for doc in result['source_documents']]}")
 from langchain.schema import BaseRetriever, Document as LangChainDoc
 from typing import List
 
+
 class LlamaIndexRetriever(BaseRetriever):
     """Wrap LlamaIndex as LangChain retriever"""
-    
+
     def __init__(self, index, similarity_top_k=3):
         self.index = index
         self.retriever = index.as_retriever(similarity_top_k=similarity_top_k)
-    
+
     def get_relevant_documents(self, query: str) -> List[LangChainDoc]:
         """Retrieve documents using LlamaIndex"""
         nodes = self.retriever.retrieve(query)
-        
+
         # Convert LlamaIndex nodes to LangChain documents
         docs = []
         for node in nodes:
             doc = LangChainDoc(
                 page_content=node.text,
                 metadata={
-                    'score': node.score,
-                    'node_id': node.node_id,
-                    **node.metadata
-                }
+                    "score": node.score,
+                    "node_id": node.node_id,
+                    **node.metadata,
+                },
             )
             docs.append(doc)
-        
+
         return docs
-    
+
     async def aget_relevant_documents(self, query: str) -> List[LangChainDoc]:
         # Async version
         return self.get_relevant_documents(query)
+
 
 # Usage
 vector_index = VectorStoreIndex.from_documents(docs)
@@ -1751,7 +1751,7 @@ from langchain.chains import ConversationalRetrievalChain
 qa = ConversationalRetrievalChain.from_llm(
     llm=ChatOpenAI(model="gpt-5.6-luna"),
     retriever=retriever,
-    return_source_documents=True
+    return_source_documents=True,
 )
 ```
 
@@ -1771,20 +1771,22 @@ tree_idx = TreeIndex.from_documents(docs)
 vector_retriever = vector_idx.as_retriever(similarity_top_k=3)
 tree_retriever = tree_idx.as_retriever()
 
+
 # Custom LangChain chain that uses both
 def hybrid_retrieve(query: str):
     # Get from both indexes
     vector_nodes = vector_retriever.retrieve(query)
     tree_nodes = tree_retriever.retrieve(query)
-    
+
     # Combine and deduplicate
     all_nodes = {node.node_id: node for node in vector_nodes + tree_nodes}
-    
+
     # Convert to LangChain format
     return [
         LangChainDoc(page_content=node.text, metadata=node.metadata)
         for node in all_nodes.values()
     ]
+
 
 # Use in LangChain template
 template = """Answer based on these documents:
@@ -1824,23 +1826,20 @@ tools = [
         name="Vector Search",
         func=lambda q: str(vector_engine.query(q)),
         description="Search for specific information using semantic similarity. "
-                    "Use for targeted questions like 'How to reset password?'"
+        "Use for targeted questions like 'How to reset password?'",
     ),
     Tool(
         name="Summary Search",
         func=lambda q: str(summary_engine.query(q)),
         description="Get high-level summary across all documents. "
-                    "Use for broad questions like 'What are common issues?'"
-    )
+        "Use for broad questions like 'What are common issues?'",
+    ),
 ]
 
 # Create agent
 llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
 agent = initialize_agent(
-    tools=tools,
-    llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True
+    tools=tools, llm=llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
 
 # Agent will choose the right index strategy
@@ -1874,7 +1873,7 @@ index = VectorStoreIndex.from_documents(docs, storage_context=storage_context)
 langchain_vectorstore = Chroma(
     client=chroma_client,
     collection_name="documents",
-    embedding_function=OpenAIEmbeddings()
+    embedding_function=OpenAIEmbeddings(),
 )
 retriever = langchain_vectorstore.as_retriever()
 
@@ -1882,7 +1881,7 @@ retriever = langchain_vectorstore.as_retriever()
 langchain_vectorstore = Chroma.from_documents(
     documents=langchain_docs,
     embedding=OpenAIEmbeddings(),
-    persist_directory="./chroma_db"
+    persist_directory="./chroma_db",
 )
 
 # Access same DB from LlamaIndex
@@ -1918,27 +1917,30 @@ index = VectorStoreIndex.from_vector_store(llama_vector_store)
 from llama_index.core import VectorStoreIndex, Document
 import os
 
+
 def build_index(documents):
     """Build and persist index with LlamaIndex"""
-    docs = [Document(text=d['text'], metadata=d['metadata']) for d in documents]
+    docs = [Document(text=d["text"], metadata=d["metadata"]) for d in documents]
     index = VectorStoreIndex.from_documents(docs)
     index.storage_context.persist(persist_dir="./storage")
     return index
+
 
 # rag_chain.py - Use LangChain for RAG pipeline
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 from llama_index.core import load_index_from_storage, StorageContext
 
+
 def create_rag_chain():
     """Load LlamaIndex and create LangChain pipeline"""
     # Load LlamaIndex index
     storage_context = StorageContext.from_defaults(persist_dir="./storage")
     index = load_index_from_storage(storage_context)
-    
+
     # Convert to LangChain retriever
     retriever = index.as_retriever(similarity_top_k=3)
-    
+
     # Build LangChain chain
     llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
     qa_chain = RetrievalQA.from_chain_type(
@@ -1947,10 +1949,11 @@ def create_rag_chain():
         return_source_documents=True,
         chain_type_kwargs={
             "prompt": CUSTOM_PROMPT  # Your custom prompt
-        }
+        },
     )
-    
+
     return qa_chain
+
 
 # main.py - Use both
 index = build_index(my_documents)  # LlamaIndex indexing

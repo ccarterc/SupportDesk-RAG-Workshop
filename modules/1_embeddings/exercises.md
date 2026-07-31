@@ -135,16 +135,16 @@ make m1
 query1 = "Login authentication failed"
 query2 = "Slow database performance"
 
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("COMPARING TWO QUERIES")
-print("="*80)
+print("=" * 80)
 
 for q in [query1, query2]:
     response = client.embeddings.create(input=[q], model=embedding_model)
     q_emb = np.array([response.data[0].embedding])
     sims = cosine_similarity(q_emb, embeddings)[0]
     top_idx = np.argmax(sims)
-    
+
     print(f"\nQuery: '{q}'")
     print(f"  Best match: {tickets[top_idx]['title']}")
     print(f"  Score: {sims[top_idx]:.4f}")
@@ -173,15 +173,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-model = 'text-embedding-3-small'
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+model = "text-embedding-3-small"
 
 # These mean the SAME thing but use DIFFERENT words
 texts = [
-    "User authentication failed",      # Original
-    "Login credentials rejected",       # Same meaning, different words
-    "Cannot sign in to account",        # Same meaning, different words
-    "Database connection timeout",      # DIFFERENT topic
+    "User authentication failed",  # Original
+    "Login credentials rejected",  # Same meaning, different words
+    "Cannot sign in to account",  # Same meaning, different words
+    "Database connection timeout",  # DIFFERENT topic
 ]
 
 # Generate embeddings
@@ -223,7 +223,7 @@ make m1
 **Use the existing search loop in demo/solutions style and add this ONE line:**
 
 ```python
-if category_filter and ticket['category'] != category_filter:
+if category_filter and ticket["category"] != category_filter:
     continue
 ```
 
@@ -237,41 +237,43 @@ from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-model = 'text-embedding-3-small'
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+model = "text-embedding-3-small"
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 
 texts = [f"{t['title']}. {t['description']}" for t in tickets]
 response = client.embeddings.create(input=texts, model=model)
 embeddings = np.array([data.embedding for data in response.data])
 
+
 def search_with_category(query, category_filter=None, top_k=5):
     """Search tickets, optionally filtering by category"""
     # Get query embedding
     response = client.embeddings.create(input=[query], model=model)
     query_emb = np.array([response.data[0].embedding])
-    
+
     # Calculate similarities
     similarities = cosine_similarity(query_emb, embeddings)[0]
-    
+
     # Get results with category filter
     results = []
     for idx in np.argsort(similarities)[::-1]:
         ticket = tickets[idx]
-        
+
         # FILL IN THIS LINE: Skip if category doesn't match filter
         # Hint: if category_filter is set AND ticket category doesn't match, skip
-        if category_filter and ticket['category'] != category_filter:
+        if category_filter and ticket["category"] != category_filter:
             continue
-        
+
         results.append((ticket, similarities[idx]))
         if len(results) >= top_k:
             break
-    
+
     return results
+
 
 # Test it
 print("All categories:")
@@ -279,7 +281,9 @@ for ticket, score in search_with_category("login problem"):
     print(f"  {score:.3f} [{ticket['category']}] {ticket['title']}")
 
 print("\nOnly 'Authentication' category:")
-for ticket, score in search_with_category("login problem", category_filter="Authentication"):
+for ticket, score in search_with_category(
+    "login problem", category_filter="Authentication"
+):
     print(f"  {score:.3f} [{ticket['category']}] {ticket['title']}")
 ```
 
@@ -307,12 +311,12 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-model = 'text-embedding-3-small'
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+model = "text-embedding-3-small"
 
 texts = [
     "Password reset not working",
-    "Database connection timeout", 
+    "Database connection timeout",
     "App crashes on startup",
     "Payment declined error",
     "Email notifications delayed",
@@ -334,7 +338,7 @@ time_fast = time.time() - start
 print(f"  Time: {time_fast:.2f} seconds")
 
 # Compare
-print(f"\n✓ Batch is {time_slow/time_fast:.1f}x faster!")
+print(f"\n✓ Batch is {time_slow / time_fast:.1f}x faster!")
 print(f"  Always batch your embeddings in production!")
 ```
 
@@ -366,15 +370,15 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Load first 10 tickets
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)[:10]
 
 # Generate embeddings
-texts = [t['title'] for t in tickets]
-response = client.embeddings.create(input=texts, model='text-embedding-3-small')
+texts = [t["title"] for t in tickets]
+response = client.embeddings.create(input=texts, model="text-embedding-3-small")
 embeddings = np.array([data.embedding for data in response.data])
 
 # Compute similarity matrix
@@ -382,13 +386,13 @@ sim_matrix = cosine_similarity(embeddings)
 
 # Create heatmap
 plt.figure(figsize=(10, 8))
-plt.imshow(sim_matrix, cmap='RdYlGn', vmin=0, vmax=1)
-plt.colorbar(label='Cosine Similarity')
-plt.xticks(range(10), [t['ticket_id'] for t in tickets], rotation=45, ha='right')
-plt.yticks(range(10), [t['ticket_id'] for t in tickets])
-plt.title('Ticket Similarity Matrix')
+plt.imshow(sim_matrix, cmap="RdYlGn", vmin=0, vmax=1)
+plt.colorbar(label="Cosine Similarity")
+plt.xticks(range(10), [t["ticket_id"] for t in tickets], rotation=45, ha="right")
+plt.yticks(range(10), [t["ticket_id"] for t in tickets])
+plt.title("Ticket Similarity Matrix")
 plt.tight_layout()
-plt.savefig('similarity_heatmap.png')
+plt.savefig("similarity_heatmap.png")
 plt.show()
 print("✓ Saved as similarity_heatmap.png")
 ```
@@ -415,6 +419,7 @@ embeddings = [data.embedding for data in response.data]
 
 # Calculate similarity
 from sklearn.metrics.pairwise import cosine_similarity
+
 similarities = cosine_similarity([query_embedding], all_embeddings)[0]
 
 # Get top K indices

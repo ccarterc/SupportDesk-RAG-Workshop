@@ -145,24 +145,31 @@ Reference snippet:
 import json
 import os
 from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, SummaryIndex, TreeIndex, KeywordTableIndex, Document, Settings
+from llama_index.core import (
+    VectorStoreIndex,
+    SummaryIndex,
+    TreeIndex,
+    KeywordTableIndex,
+    Document,
+    Settings,
+)
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
 # Configure LlamaIndex
-Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-5.6-luna')
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5.6-luna")
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         text=f"Title: {t['title']}\nDescription: {t['description']}\nResolution: {t['resolution']}",
-        metadata={'ticket_id': t['ticket_id'], 'category': t['category']}
+        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
     )
     for t in tickets
 ]
@@ -173,27 +180,23 @@ keyword_idx = KeywordTableIndex.from_documents(documents)
 print("✓ Indexes built\n")
 
 # Compare on 3 queries
-test_queries = [
-    "authentication login problem",
-    "database timeout error",
-    "TICK-005"
-]
+test_queries = ["authentication login problem", "database timeout error", "TICK-005"]
 
 for query in test_queries:
     print("=" * 60)
     print(f"Query: '{query}'")
     print("=" * 60)
-    
+
     # Vector Index
     vec_response = vector_idx.as_query_engine(similarity_top_k=3).query(query)
     print(f"\nVector Index:")
     print(f"  {str(vec_response)[:150]}...")
-    
+
     # Keyword Index
     kw_response = keyword_idx.as_query_engine().query(query)
     print(f"\nKeyword Index:")
     print(f"  {str(kw_response)[:150]}...")
-    
+
     print()
 ```
 
@@ -221,23 +224,29 @@ Reference snippet:
 import json
 import os
 from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, Document, Settings, StorageContext, load_index_from_storage
+from llama_index.core import (
+    VectorStoreIndex,
+    Document,
+    Settings,
+    StorageContext,
+    load_index_from_storage,
+)
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
-Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-5.6-luna')
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5.6-luna")
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={'ticket_id': t['ticket_id'], 'category': t['category']}
+        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
     )
     for t in tickets
 ]
@@ -278,9 +287,9 @@ make m3
 Add this to your current query flow:
 
 ```python
-filters = MetadataFilters(filters=[
-    ExactMatchFilter(key="category", value="Authentication")
-])
+filters = MetadataFilters(
+    filters=[ExactMatchFilter(key="category", value="Authentication")]
+)
 ```
 
 Reference snippet:
@@ -295,17 +304,21 @@ from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
-Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-5.6-luna')
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5.6-luna")
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={'ticket_id': t['ticket_id'], 'category': t['category'], 'priority': t['priority']}
+        metadata={
+            "ticket_id": t["ticket_id"],
+            "category": t["category"],
+            "priority": t["priority"],
+        },
     )
     for t in tickets
 ]
@@ -320,9 +333,9 @@ print(f"  {response}\n")
 
 # Query WITH category filter
 print("With 'Authentication' filter:")
-filters = MetadataFilters(filters=[
-    ExactMatchFilter(key="category", value="Authentication")
-])
+filters = MetadataFilters(
+    filters=[ExactMatchFilter(key="category", value="Authentication")]
+)
 filtered_engine = vector_index.as_query_engine(similarity_top_k=3, filters=filters)
 filtered_response = filtered_engine.query("system problem")
 print(f"  {filtered_response}")
@@ -351,23 +364,29 @@ import json
 import time
 import os
 from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, SummaryIndex, KeywordTableIndex, Document, Settings
+from llama_index.core import (
+    VectorStoreIndex,
+    SummaryIndex,
+    KeywordTableIndex,
+    Document,
+    Settings,
+)
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
-Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-5.6-luna')
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5.6-luna")
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={'ticket_id': t['ticket_id'], 'category': t['category']}
+        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
     )
     for t in tickets
 ]
@@ -392,7 +411,9 @@ summary_index = SummaryIndex.from_documents(documents)
 summary_time = time.time() - start
 print(f"Summary Index: {summary_time:.2f}s")
 
-print(f"\n→ Vector Index takes longer because it generates embeddings for all documents")
+print(
+    f"\n→ Vector Index takes longer because it generates embeddings for all documents"
+)
 print(f"→ Keyword Index uses LLM to extract keywords from each document")
 print(f"→ Summary Index is just storing documents (work happens at query time)")
 ```
@@ -422,17 +443,17 @@ from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
-Settings.embed_model = OpenAIEmbedding(model='text-embedding-3-small')
-Settings.llm = OpenAI(model='gpt-5.6-luna')
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5.6-luna")
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         text=f"Title: {t['title']}\nDescription: {t['description']}",
-        metadata={'ticket_id': t['ticket_id'], 'category': t['category']}
+        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
     )
     for t in tickets
 ]
@@ -464,7 +485,7 @@ for i, node in enumerate(keyword_nodes[:3], 1):
 seen = set()
 hybrid_results = []
 for node in vector_nodes + keyword_nodes:
-    ticket_id = node.node.metadata.get('ticket_id')
+    ticket_id = node.node.metadata.get("ticket_id")
     if ticket_id and ticket_id not in seen:
         seen.add(ticket_id)
         hybrid_results.append(ticket_id)
@@ -484,7 +505,12 @@ make m3
 
 ### Index Types
 ```python
-from llama_index.core import VectorStoreIndex, SummaryIndex, TreeIndex, KeywordTableIndex
+from llama_index.core import (
+    VectorStoreIndex,
+    SummaryIndex,
+    TreeIndex,
+    KeywordTableIndex,
+)
 
 # Vector: Semantic similarity search
 vector_index = VectorStoreIndex.from_documents(documents)
@@ -519,6 +545,7 @@ index.storage_context.persist(persist_dir="./storage")
 
 # Load
 from llama_index.core import StorageContext, load_index_from_storage
+
 storage_context = StorageContext.from_defaults(persist_dir="./storage")
 loaded_index = load_index_from_storage(storage_context)
 ```

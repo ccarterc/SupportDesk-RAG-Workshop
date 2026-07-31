@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Agentic RAG Demo - LangChain Agent with Tools
 ==============================================
@@ -12,19 +11,18 @@ This demo teaches:
 """
 
 import os
-import json
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage
 
+from dotenv import load_dotenv
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+from langchain_openai import ChatOpenAI
 from tools import SupportTicketTools
 
 # Load environment variables
 load_dotenv()
 
-print("="*80)
+print("=" * 80)
 print("AGENTIC RAG: LangChain Agent with RAG Tools")
-print("="*80)
+print("=" * 80)
 print("\nThis demo shows how to build an intelligent agent that:")
 print("✓ Uses RAG retrieval as a tool (not the only approach)")
 print("✓ Decides when to use which tool based on the query")
@@ -35,20 +33,20 @@ print("✓ Shows decision trace for tool selection")
 # ============================================================================
 # PART 1: Setup Agent with Tools
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 1: Setting Up the Agent")
-print("="*80)
+print("=" * 80)
 
 print("\nInitializing LLM...")
 llm = ChatOpenAI(
-    model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
+    model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.6-luna"),
     # reasoning_effort="none" is required here, not optional. On the GPT-5
     # series, /v1/chat/completions refuses function tools unless reasoning is
     # switched off -- the API tells you to either use /v1/responses or set this.
     # Since the whole point of this module is tool calling, we set it.
     # (It also replaces the temperature=0 these models no longer accept.)
     reasoning_effort="none",
-    api_key=os.getenv('OPENAI_API_KEY')
+    api_key=os.getenv("OPENAI_API_KEY"),
 )
 print("✓ LLM initialized")
 
@@ -59,23 +57,25 @@ tools = tool_manager.get_tools()
 # Convert tools to OpenAI function format
 tool_definitions = []
 for tool in tools:
-    tool_definitions.append({
-        "type": "function",
-        "function": {
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "input": {
-                        "type": "string",
-                        "description": "The input to the tool"
-                    }
+    tool_definitions.append(
+        {
+            "type": "function",
+            "function": {
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "input": {
+                            "type": "string",
+                            "description": "The input to the tool",
+                        }
+                    },
+                    "required": ["input"],
                 },
-                "required": ["input"]
-            }
+            },
         }
-    })
+    )
 
 # Bind tools to LLM
 llm_with_tools = llm.bind(tools=tool_definitions)
@@ -83,6 +83,7 @@ llm_with_tools = llm.bind(tools=tool_definitions)
 print(f"✓ Created {len(tools)} tools:")
 for tool in tools:
     print(f"  • {tool.name}: {tool.description.split('.')[0]}")
+
 
 def run_agent(query: str, max_iterations: int = 5) -> str:
     """
@@ -95,7 +96,8 @@ def run_agent(query: str, max_iterations: int = 5) -> str:
     4) Repeat until no tool calls remain or iteration cap is reached.
     """
     messages = [
-        SystemMessage(content="""You are an expert support desk assistant that helps troubleshoot technical issues.
+        SystemMessage(
+            content="""You are an expert support desk assistant that helps troubleshoot technical issues.
 
 You have access to a database of previous support tickets with their resolutions.
 Use your tools to find relevant information and provide helpful, accurate answers.
@@ -110,14 +112,15 @@ Guidelines:
 - Before each tool call, provide a short public rationale in content using this exact prefix:
     "Decision: <one sentence explaining why this tool is needed>"
 
-Remember: Your primary value is retrieving and applying solutions from past tickets!"""),
-        HumanMessage(content=query)
+Remember: Your primary value is retrieving and applying solutions from past tickets!"""
+        ),
+        HumanMessage(content=query),
     ]
-    
+
     for i in range(max_iterations):
         response = llm_with_tools.invoke(messages)
         messages.append(response)
-        
+
         # If the model produced no tool calls, treat content as final answer.
         if not response.tool_calls:
             # No more tool calls, return the response
@@ -127,15 +130,15 @@ Remember: Your primary value is retrieving and applying solutions from past tick
         decision_trace = (response.content or "").strip()
         if decision_trace:
             print(f"\n🧭 {decision_trace}")
-        
+
         # Execute each requested tool exactly as the model specified.
         for tool_call in response.tool_calls:
             tool_name = tool_call["name"]
             tool_input = tool_call["args"].get("input", "")
-            
+
             print(f"\n🔧 Calling tool: {tool_name}")
             print(f"   Input: {tool_input}")
-            
+
             # Resolve tool by name from the registered tool list.
             # This explicit lookup keeps control in application code (safer than eval).
             tool_output = None
@@ -143,29 +146,29 @@ Remember: Your primary value is retrieving and applying solutions from past tick
                 if tool.name == tool_name:
                     tool_output = tool.func(tool_input)
                     break
-            
+
             if tool_output is None:
                 tool_output = f"Error: Tool {tool_name} not found"
-            
+
             print(f"   Output: {tool_output[:200]}...")
-            
+
             # Feed tool output back to model in the expected ToolMessage format.
             # The `tool_call_id` links this output to the originating request.
-            messages.append(ToolMessage(
-                content=tool_output,
-                tool_call_id=tool_call["id"]
-            ))
-    
+            messages.append(
+                ToolMessage(content=tool_output, tool_call_id=tool_call["id"])
+            )
+
     return "Maximum iterations reached. Could not complete the task."
+
 
 print("\n✓ Agent ready!")
 
 # ============================================================================
 # PART 2: Simple Query - RAG Tool Selection
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 2: Simple Query - Agent Selects RAG Tool")
-print("="*80)
+print("=" * 80)
 
 query1 = "How do I fix authentication problems after password reset?"
 print(f"\nQuery: '{query1}'")
@@ -184,9 +187,9 @@ print(response1)
 # ============================================================================
 # PART 3: Specific Lookup - Different Tool
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 3: Specific Ticket Lookup")
-print("="*80)
+print("=" * 80)
 
 query2 = "Show me details of ticket TICK-005"
 print(f"\nQuery: '{query2}'")
@@ -204,9 +207,9 @@ print(response2)
 # ============================================================================
 # PART 4: Category Filtering
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 4: Category-Based Search")
-print("="*80)
+print("=" * 80)
 
 query3 = "What payment-related issues have we seen?"
 print(f"\nQuery: '{query3}'")
@@ -224,9 +227,9 @@ print(response3)
 # ============================================================================
 # PART 5: Statistics Query
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 5: Database Statistics")
-print("="*80)
+print("=" * 80)
 
 query4 = "Give me an overview of the ticket database"
 print(f"\nQuery: '{query4}'")
@@ -244,9 +247,9 @@ print(response4)
 # ============================================================================
 # PART 6: Multi-Step Reasoning
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 6: Multi-Step Reasoning")
-print("="*80)
+print("=" * 80)
 
 query5 = "Find database-related critical issues and tell me how they were resolved"
 print(f"\nQuery: '{query5}'")
@@ -264,60 +267,67 @@ print(response5)
 # ============================================================================
 # PART 7: Conversational Agent with Memory
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 7: Conversational Agent with Memory")
-print("="*80)
+print("=" * 80)
 
 print("\nSimulating a multi-turn conversation...")
 
-def run_conversational_agent(conversation_history, query: str, max_iterations: int = 5) -> tuple:
+
+def run_conversational_agent(
+    conversation_history, query: str, max_iterations: int = 5
+) -> tuple:
     """
     Run the agent while preserving prior conversation turns.
 
     `conversation_history` should already contain Human/AI/Tool messages from
     previous turns so follow-up questions can resolve references like "that".
     """
-    messages = [SystemMessage(content="""You are an expert support desk assistant that helps troubleshoot technical issues.
+    messages = [
+        SystemMessage(
+            content="""You are an expert support desk assistant that helps troubleshoot technical issues.
 Use your tools to find relevant information and maintain context across our conversation.
 Before each tool call, provide a short public rationale in content using this exact prefix:
-"Decision: <one sentence explaining why this tool is needed>".""")]
-    
+"Decision: <one sentence explaining why this tool is needed>"."""
+        )
+    ]
+
     # Replay prior turns before appending the new user query.
     messages.extend(conversation_history)
     messages.append(HumanMessage(content=query))
-    
+
     for i in range(max_iterations):
         response = llm_with_tools.invoke(messages)
         messages.append(response)
-        
+
         if not response.tool_calls:
             return messages, response.content
 
         decision_trace = (response.content or "").strip()
         if decision_trace:
             print(f"\n🧭 {decision_trace}")
-        
+
         for tool_call in response.tool_calls:
             tool_name = tool_call["name"]
             tool_input = tool_call["args"].get("input", "")
-            
+
             print(f"\n🔧 Calling tool: {tool_name}")
-            
+
             tool_output = None
             for tool in tools:
                 if tool.name == tool_name:
                     tool_output = tool.func(tool_input)
                     break
-            
+
             if tool_output is None:
                 tool_output = f"Error: Tool {tool_name} not found"
-            
-            messages.append(ToolMessage(
-                content=tool_output,
-                tool_call_id=tool_call["id"]
-            ))
-    
+
+            messages.append(
+                ToolMessage(content=tool_output, tool_call_id=tool_call["id"])
+            )
+
     return messages, "Maximum iterations reached."
+
 
 # Start conversation
 conversation = []
@@ -344,9 +354,9 @@ print(f"\nAssistant: {conv_response3}")
 # ============================================================================
 # Summary and Key Learnings
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("KEY LEARNINGS: Agentic RAG")
-print("="*80)
+print("=" * 80)
 
 print("""
 ✅ Agent Architecture Benefits:
@@ -387,6 +397,6 @@ print("""
    5. Add evaluation metrics for agent responses
 """)
 
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("Demo completed! Check exercises.md for hands-on practice.")
-print("="*80)
+print("=" * 80)

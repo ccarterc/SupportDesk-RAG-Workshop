@@ -64,7 +64,7 @@ splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
     chunk_overlap=50,
     separators=["\n\n", "\n", ". ", " ", ""],  # Try in order
-    length_function=len
+    length_function=len,
 )
 chunks = splitter.split_text(text)
 ```
@@ -95,21 +95,21 @@ chunks = splitter.split_text(text)
 def semantic_chunking(text, similarity_threshold=0.7):
     sentences = split_into_sentences(text)
     sentence_embeddings = [get_embedding(s) for s in sentences]
-    
+
     chunks = []
     current_chunk = [sentences[0]]
-    
+
     for i in range(1, len(sentences)):
-        prev_embedding = sentence_embeddings[i-1]
+        prev_embedding = sentence_embeddings[i - 1]
         curr_embedding = sentence_embeddings[i]
         similarity = cosine_similarity(prev_embedding, curr_embedding)
-        
+
         if similarity >= similarity_threshold:
             current_chunk.append(sentences[i])
         else:
             chunks.append(" ".join(current_chunk))
             current_chunk = [sentences[i]]
-    
+
     chunks.append(" ".join(current_chunk))
     return chunks
 ```
@@ -160,15 +160,10 @@ chunks = splitter.split_text_from_url(url)
 
 #### Code Splitting
 ```python
-from langchain_text_splitters import (
-    RecursiveCharacterTextSplitter,
-    Language
-)
+from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 
 python_splitter = RecursiveCharacterTextSplitter.from_language(
-    language=Language.PYTHON,
-    chunk_size=500,
-    chunk_overlap=50
+    language=Language.PYTHON, chunk_size=500, chunk_overlap=50
 )
 chunks = python_splitter.split_text(code)
 ```
@@ -192,19 +187,21 @@ chunks = python_splitter.split_text(code)
 def create_sentence_windows(text, window_size=3):
     sentences = split_into_sentences(text)
     windows = []
-    
+
     for i in range(len(sentences)):
         # Get surrounding sentences
         start = max(0, i - window_size)
         end = min(len(sentences), i + window_size + 1)
         window = sentences[start:end]
-        
-        windows.append({
-            'search_text': sentences[i],  # Index only this
-            'retrieval_text': " ".join(window),  # Return with context
-            'position': i
-        })
-    
+
+        windows.append(
+            {
+                "search_text": sentences[i],  # Index only this
+                "retrieval_text": " ".join(window),  # Return with context
+                "position": i,
+            }
+        )
+
     return windows
 ```
 
@@ -227,22 +224,24 @@ def create_sentence_windows(text, window_size=3):
 def create_parent_child_chunks(documents):
     parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-    
+
     indexed_chunks = []
-    
+
     for doc in documents:
         parent_chunks = parent_splitter.split_text(doc)
-        
+
         for parent_chunk in parent_chunks:
             child_chunks = child_splitter.split_text(parent_chunk)
-            
+
             for child in child_chunks:
-                indexed_chunks.append({
-                    'child_text': child,  # Index this
-                    'parent_text': parent_chunk,  # Return this
-                    'doc_id': doc.id
-                })
-    
+                indexed_chunks.append(
+                    {
+                        "child_text": child,  # Index this
+                        "parent_text": parent_chunk,  # Return this
+                        "doc_id": doc.id,
+                    }
+                )
+
     return indexed_chunks
 ```
 
@@ -312,18 +311,20 @@ import tiktoken
 
 encoding = tiktoken.get_encoding("cl100k_base")
 
+
 def count_tokens(text):
     return len(encoding.encode(text))
+
 
 def token_based_chunking(text, max_tokens=500):
     tokens = encoding.encode(text)
     chunks = []
-    
+
     for i in range(0, len(tokens), max_tokens):
-        chunk_tokens = tokens[i:i + max_tokens]
+        chunk_tokens = tokens[i : i + max_tokens]
         chunk_text = encoding.decode(chunk_tokens)
         chunks.append(chunk_text)
-    
+
     return chunks
 ```
 
@@ -343,13 +344,13 @@ Store multiple versions of the same content:
 ```python
 def multi_representation_chunking(document):
     return {
-        'full_text': document,
-        'summary': generate_summary(document),  # For retrieval
-        'keywords': extract_keywords(document),  # For filtering
-        'embeddings': {
-            'full': get_embedding(document),
-            'summary': get_embedding(generate_summary(document))
-        }
+        "full_text": document,
+        "summary": generate_summary(document),  # For retrieval
+        "keywords": extract_keywords(document),  # For filtering
+        "embeddings": {
+            "full": get_embedding(document),
+            "summary": get_embedding(generate_summary(document)),
+        },
     }
 ```
 
@@ -364,14 +365,14 @@ def enrich_chunks(chunks, document_metadata):
     enriched = []
     for i, chunk in enumerate(chunks):
         enriched_chunk = {
-            'text': chunk,
-            'metadata': {
-                'document_title': document_metadata['title'],
-                'chunk_index': i,
-                'total_chunks': len(chunks),
-                'section': get_section(chunk),
-                'prev_chunk_summary': summarize(chunks[i-1]) if i > 0 else None
-            }
+            "text": chunk,
+            "metadata": {
+                "document_title": document_metadata["title"],
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                "section": get_section(chunk),
+                "prev_chunk_summary": summarize(chunks[i - 1]) if i > 0 else None,
+            },
         }
         enriched.append(enriched_chunk)
     return enriched
@@ -457,10 +458,7 @@ All 3 are relevant, but they are very similar to each other, so you get limited 
 At larger scale (millions of chunks/documents), this happens even more: top results often come from different chunks of the **same source document**, which reduces cross-document coverage.
 
 ```python
-results = chroma_store.similarity_search(
-        "login issues after password reset",
-        k=3
-)
+results = chroma_store.similarity_search("login issues after password reset", k=3)
 ```
 
 ### How MMR Improves This
@@ -478,8 +476,7 @@ Example MMR top 3 could be:
 
 ```python
 mmr_results = chroma_store.max_marginal_relevance_search(
-        "login issues after password reset",
-        k=3
+    "login issues after password reset", k=3
 )
 ```
 
@@ -494,14 +491,14 @@ mmr_results = chroma_store.max_marginal_relevance_search(
 ```python
 def preprocess_text(text):
     # Remove excessive whitespace
-    text = re.sub(r'\s+', ' ', text)
-    
+    text = re.sub(r"\s+", " ", text)
+
     # Normalize unicode
-    text = unicodedata.normalize('NFKC', text)
-    
+    text = unicodedata.normalize("NFKC", text)
+
     # Remove control characters
-    text = ''.join(char for char in text if unicodedata.category(char)[0] != 'C')
-    
+    text = "".join(char for char in text if unicodedata.category(char)[0] != "C")
+
     return text.strip()
 ```
 
@@ -510,16 +507,16 @@ def preprocess_text(text):
 ```python
 def chunk_with_metadata(document):
     chunks = split_document(document)
-    
+
     for i, chunk in enumerate(chunks):
         chunk.metadata = {
-            'source': document.source,
-            'chunk_id': f"{document.id}_chunk_{i}",
-            'created_at': datetime.now(),
-            'language': detect_language(chunk),
-            'tokens': count_tokens(chunk)
+            "source": document.source,
+            "chunk_id": f"{document.id}_chunk_{i}",
+            "created_at": datetime.now(),
+            "language": detect_language(chunk),
+            "tokens": count_tokens(chunk),
         }
-    
+
     return chunks
 ```
 
@@ -564,7 +561,7 @@ def handle_special_content(text):
 ### 1. Ignoring Document Structure
 ❌ **Wrong**: Treat all text as plain text
 ```python
-chunks = text.split('\n\n')  # Loses headers, structure
+chunks = text.split("\n\n")  # Loses headers, structure
 ```
 
 ✅ **Right**: Preserve hierarchy
@@ -588,7 +585,7 @@ for size in [200, 400, 600]:
 ### 3. No Overlap
 ❌ **Wrong**: Hard boundaries
 ```python
-chunks = [text[i:i+500] for i in range(0, len(text), 500)]
+chunks = [text[i : i + 500] for i in range(0, len(text), 500)]
 ```
 
 ✅ **Right**: Overlapping chunks
@@ -614,6 +611,7 @@ if count_tokens(chunk) > 500:
 ### Parallel Chunking
 ```python
 from concurrent.futures import ProcessPoolExecutor
+
 
 def chunk_documents_parallel(documents):
     with ProcessPoolExecutor() as executor:
@@ -645,7 +643,7 @@ from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     HTMLHeaderTextSplitter,
     TokenTextSplitter,
-    CharacterTextSplitter
+    CharacterTextSplitter,
 )
 ```
 
@@ -661,7 +659,8 @@ tokens = encoding.encode(text)
 ### Sentence Splitting
 ```python
 import nltk
-nltk.download('punkt')
+
+nltk.download("punkt")
 
 sentences = nltk.sent_tokenize(text)
 ```

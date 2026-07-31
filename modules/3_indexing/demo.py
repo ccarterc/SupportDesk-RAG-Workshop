@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ================================================================================
 MODULE 3: Indexing Strategies for RAG
@@ -42,17 +41,17 @@ LlamaIndex excels at: Document indexing, retrieval patterns
 # =============================================================================
 import json
 import os
-import httpx
+
 from dotenv import load_dotenv
 
 # LlamaIndex core components
 from llama_index.core import (
-    VectorStoreIndex,    # Standard embedding-based index
-    SummaryIndex,        # Full document storage, LLM-based relevance
-    TreeIndex,           # Hierarchical summarization tree
-    KeywordTableIndex,   # Inverted keyword index
-    Document,            # Document wrapper with text + metadata
-    Settings             # Global configuration
+    Document,  # Document wrapper with text + metadata
+    KeywordTableIndex,  # Inverted keyword index
+    Settings,  # Global configuration
+    SummaryIndex,  # Full document storage, LLM-based relevance
+    TreeIndex,  # Hierarchical summarization tree
+    VectorStoreIndex,  # Standard embedding-based index
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
@@ -77,24 +76,24 @@ os.environ["HTTPX_TIMEOUT"] = "300"  # 5 minutes
 # These settings apply globally to all indexes we create.
 # =============================================================================
 Settings.embed_model = OpenAIEmbedding(
-    model=os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
-    api_key=os.getenv('OPENAI_API_KEY'),
-    timeout=120,      # 2 min timeout for embedding calls
-    max_retries=5     # Retry on failure
+    model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"),
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=120,  # 2 min timeout for embedding calls
+    max_retries=5,  # Retry on failure
 )
 Settings.llm = OpenAI(
-    model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
-    api_key=os.getenv('OPENAI_API_KEY'),
-    timeout=300,      # 5 min timeout (Tree/Keyword indexes are slow!)
-    max_retries=5
+    model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.6-luna"),
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=300,  # 5 min timeout (Tree/Keyword indexes are slow!)
+    max_retries=5,
 )
 
 # =============================================================================
 # INTRODUCTION
 # =============================================================================
-print("="*80)
+print("=" * 80)
 print("MODULE 3: INDEXING STRATEGIES FOR RAG")
-print("="*80)
+print("=" * 80)
 print("\nThis demo compares 5 different indexing approaches:")
 print("1. Vector Index - Semantic similarity search (MOST COMMON)")
 print("2. Summary Index - Search through full documents with LLM")
@@ -105,11 +104,11 @@ print("5. Hybrid Retrieval - Combine multiple strategies (PRODUCTION)")
 # ============================================================================
 # LOAD DATA
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("Loading Support Tickets")
-print("="*80)
+print("=" * 80)
 
-with open('../../data/synthetic_tickets.json', 'r', encoding='utf-8') as f:
+with open("../../data/synthetic_tickets.json", "r", encoding="utf-8") as f:
     tickets = json.load(f)
 
 # -----------------------------------------------------------------------------
@@ -124,21 +123,21 @@ documents = []
 for ticket in tickets:
     # Combine all fields into content (rich context for embedding)
     # IMPORTANT: Include ticket_id in text so keyword index can find it!
-    content = f"""Ticket ID: {ticket['ticket_id']}
-Title: {ticket['title']}
-Description: {ticket['description']}
-Resolution: {ticket['resolution']}
-Category: {ticket['category']}
-Priority: {ticket['priority']}"""
-    
+    content = f"""Ticket ID: {ticket["ticket_id"]}
+Title: {ticket["title"]}
+Description: {ticket["description"]}
+Resolution: {ticket["resolution"]}
+Category: {ticket["category"]}
+Priority: {ticket["priority"]}"""
+
     doc = Document(
         text=content,
         metadata={
-            'ticket_id': ticket['ticket_id'],
-            'category': ticket['category'],
-            'priority': ticket['priority'],
-            'title': ticket['title']
-        }
+            "ticket_id": ticket["ticket_id"],
+            "category": ticket["category"],
+            "priority": ticket["priority"],
+            "title": ticket["title"],
+        },
     )
     documents.append(doc)
 
@@ -187,9 +186,9 @@ print(f"\nTest Query: '{query}'")
 #   ✗ All documents treated equally (no importance weighting)
 #
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 1: Vector Index (Flat Index)")
-print("="*80)
+print("=" * 80)
 
 print("\nVector indexing embeds all chunks and retrieves by semantic similarity.")
 print("✓ Simple and effective for most use cases")
@@ -275,9 +274,9 @@ for i, node in enumerate(vector_response.source_nodes, 1):
 #   - Real-time applications (too slow)
 #
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 2: Summary Index")
-print("="*80)
+print("=" * 80)
 
 print("\nSummary indexing searches through document summaries/titles.")
 print("✓ Good for high-level queries")
@@ -401,9 +400,9 @@ for i, node in enumerate(summary_response.source_nodes[:3], 1):
 #   - Multi-level queries (broad → narrow)
 #
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 3: Tree Index (Hierarchical Retrieval)")
-print("="*80)
+print("=" * 80)
 
 print("\n⚠️  NOTE: Tree Index makes many LLM calls during build.")
 print("    Using first 10 documents to reduce API calls.")
@@ -524,9 +523,9 @@ for i, node in enumerate(tree_response.source_nodes[:3], 1):
 #   - User queries with synonyms/paraphrases
 #
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 4: Keyword Table Index")
-print("="*80)
+print("=" * 80)
 
 print("\n⚠️  NOTE: Keyword Index makes LLM calls to extract keywords.")
 print("    Using first 10 documents to reduce API calls.")
@@ -614,9 +613,9 @@ for i, node in enumerate(keyword_response.source_nodes[:3], 1):
 # 3. Weighted combination - assign weights to each retriever
 #
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 5: Hybrid Retrieval")
-print("="*80)
+print("=" * 80)
 
 print("\nHybrid retrieval combines multiple indexes for better results.")
 print("- Typically combines vector (semantic) + keyword (exact match)")
@@ -659,7 +658,7 @@ seen_ids = set()
 hybrid_nodes = []
 
 for node in vector_nodes + keyword_nodes:
-    node_id = node.metadata.get('ticket_id', node.node_id)
+    node_id = node.metadata.get("ticket_id", node.node_id)
     if node_id not in seen_ids:
         seen_ids.add(node_id)
         hybrid_nodes.append(node)
@@ -669,16 +668,16 @@ for node in vector_nodes + keyword_nodes:
 print("\nHybrid Retrieval Results (Combined):")
 for i, node in enumerate(hybrid_nodes[:3], 1):
     print(f"\n{i}. {node.metadata.get('ticket_id', 'Unknown')}")
-    if hasattr(node, 'score') and node.score:
+    if hasattr(node, "score") and node.score:
         print(f"   Score: {node.score:.4f}")
     print(f"   {node.text[:150]}...")
 
 # ============================================================================
 # PART 6: Comparison Summary
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("COMPARISON SUMMARY")
-print("="*80)
+print("=" * 80)
 
 print("""
 ┌────────────────────┬───────────────────────────────┬──────────┬───────────┐
@@ -722,9 +721,9 @@ Vector Index + Keyword Index + Reciprocal Rank Fusion (RRF)
 # ============================================================================
 # DEMO COMPLETE
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("DEMO COMPLETE!")
-print("="*80)
+print("=" * 80)
 
 print("""
 KEY TAKEAWAYS:

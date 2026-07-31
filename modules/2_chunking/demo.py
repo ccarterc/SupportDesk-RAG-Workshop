@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Module 2: Chunking & Vector Stores Demo
 ========================================
@@ -29,17 +28,20 @@ When do you need chunking?
 
 import json
 import os
-from langchain_text_splitters import (  # Various splitting strategies
-    RecursiveCharacterTextSplitter,  # Best general-purpose splitter
-    CharacterTextSplitter,  # Simple split by character count
-    MarkdownHeaderTextSplitter,  # Splits based on markdown headers
-    HTMLHeaderTextSplitter  # Splits based on HTML tags
-)
-from langchain_experimental.text_splitter import SemanticChunker  # AI-powered semantic chunking
-from langchain_community.vectorstores import Chroma  # Vector database
-from langchain_openai import OpenAIEmbeddings  # OpenAI embedding function
-from langchain_core.documents import Document  # Document abstraction
+
 from dotenv import load_dotenv
+from langchain_community.vectorstores import Chroma  # Vector database
+from langchain_core.documents import Document  # Document abstraction
+from langchain_experimental.text_splitter import (
+    SemanticChunker,  # AI-powered semantic chunking
+)
+from langchain_openai import OpenAIEmbeddings  # OpenAI embedding function
+from langchain_text_splitters import (  # Various splitting strategies
+    CharacterTextSplitter,  # Simple split by character count
+    HTMLHeaderTextSplitter,  # Splits based on HTML tags
+    MarkdownHeaderTextSplitter,  # Splits based on markdown headers
+    RecursiveCharacterTextSplitter,  # Best general-purpose splitter
+)
 
 # ============================================================================
 # SETUP: Load environment and data
@@ -48,21 +50,21 @@ from dotenv import load_dotenv
 # Load API keys from .env file (never hardcode API keys!)
 load_dotenv()
 
-print("="*80)
+print("=" * 80)
 print("MODULE 2: CHUNKING & VECTOR STORES")
-print("="*80)
+print("=" * 80)
 
 # Load our support ticket dataset
 # These are relatively SHORT documents - good for demonstrating chunking concepts
 # In real scenarios, you'd chunk PDFs, articles, manuals (much longer!)
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 print(f"\nLoaded {len(tickets)} support tickets")
 
 # ============================================================================
 # PART 1: Chunking Strategies
 # ============================================================================
-# 
+#
 # We'll demo 5 different chunking strategies:
 # 1. Fixed-size: Split by character/token count (simple but may break sentences)
 # 2. Recursive: Try progressively smaller separators (best general-purpose)
@@ -71,9 +73,9 @@ print(f"\nLoaded {len(tickets)} support tickets")
 # 5. HTML-aware: Split by HTML tags (great for web content)
 #
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 1: Chunking Strategies")
-print("="*80)
+print("=" * 80)
 
 # -----------------------------------------------------------------------------
 # First, convert our ticket data into LangChain Document objects
@@ -84,24 +86,24 @@ for ticket in tickets:
     # Combine all ticket fields into a single text block
     # TIP: Include all relevant context that helps understand the document
     full_text = f"""
-Ticket ID: {ticket['ticket_id']}
-Title: {ticket['title']}
-Category: {ticket['category']}
-Priority: {ticket['priority']}
-Description: {ticket['description']}
-Resolution: {ticket['resolution']}
+Ticket ID: {ticket["ticket_id"]}
+Title: {ticket["title"]}
+Category: {ticket["category"]}
+Priority: {ticket["priority"]}
+Description: {ticket["description"]}
+Resolution: {ticket["resolution"]}
     """.strip()
-    
+
     # Create Document object with metadata
     # Metadata is CRUCIAL - it enables filtering later!
     # Example: "Find similar tickets, but only in the 'Authentication' category"
     doc = Document(
         page_content=full_text,  # The actual text content
         metadata={
-            'ticket_id': ticket['ticket_id'],   # For identifying results
-            'category': ticket['category'],      # For category filtering
-            'priority': ticket['priority']       # For priority filtering
-        }
+            "ticket_id": ticket["ticket_id"],  # For identifying results
+            "category": ticket["category"],  # For category filtering
+            "priority": ticket["priority"],  # For priority filtering
+        },
     )
     documents.append(doc)
 
@@ -111,7 +113,7 @@ print(f"\nSample document length: {len(documents[0].page_content)} characters")
 # =============================================================================
 # STRATEGY 1: Fixed-Size Chunking
 # =============================================================================
-# 
+#
 # HOW IT WORKS:
 #   Split text into equal-sized chunks based on character count
 #   Overlap ensures we don't lose context at chunk boundaries
@@ -129,14 +131,14 @@ print(f"\nSample document length: {len(documents[0].page_content)} characters")
 print("\n--- Strategy 1: Fixed-Size Chunking ---")
 
 fixed_splitter = CharacterTextSplitter(
-    chunk_size=200,      # Maximum characters per chunk
-    chunk_overlap=20,    # Characters to repeat between chunks (10% overlap)
-    separator="\n"       # Prefer splitting on newlines when possible
+    chunk_size=200,  # Maximum characters per chunk
+    chunk_overlap=20,  # Characters to repeat between chunks (10% overlap)
+    separator="\n",  # Prefer splitting on newlines when possible
 )
 fixed_chunks = fixed_splitter.split_documents(documents)
 
 print(f"✓ Created {len(fixed_chunks)} chunks")
-print(f"  Chunk size: 200 chars, Overlap: 20 chars")
+print("  Chunk size: 200 chars, Overlap: 20 chars")
 print(f"  Sample chunk: {fixed_chunks[0].page_content[:100]}...")
 
 # =============================================================================
@@ -164,20 +166,20 @@ print(f"  Sample chunk: {fixed_chunks[0].page_content[:100]}...")
 print("\n--- Strategy 2: Recursive Character Splitting ---")
 
 recursive_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=300,      # Max characters per chunk
-    chunk_overlap=50,    # 50 char overlap (~17%)
+    chunk_size=300,  # Max characters per chunk
+    chunk_overlap=50,  # 50 char overlap (~17%)
     # Separators tried in ORDER - most specific first!
     separators=[
         "\n\n",  # 1st: Paragraph breaks (best split point)
-        "\n",    # 2nd: Line breaks
-        ". ",    # 3rd: Sentence boundaries
-        " "      # 4th: Word boundaries (last resort for text)
-    ]
+        "\n",  # 2nd: Line breaks
+        ". ",  # 3rd: Sentence boundaries
+        " ",  # 4th: Word boundaries (last resort for text)
+    ],
 )
 recursive_chunks = recursive_splitter.split_documents(documents)
 
 print(f"✓ Created {len(recursive_chunks)} chunks")
-print(f"  Tries to split on paragraph/sentence boundaries")
+print("  Tries to split on paragraph/sentence boundaries")
 print(f"  Sample chunk: {recursive_chunks[0].page_content[:100]}...")
 
 # =============================================================================
@@ -199,7 +201,7 @@ print("  Note: Semantic chunking uses embeddings to find natural break points")
 # Initialize OpenAI embeddings for semantic chunker
 # IMPORTANT: This costs money! Each sentence needs an embedding API call
 embeddings_model = OpenAIEmbeddings(
-    model=os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')
+    model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 )
 
 # Demo with a paragraph that has CLEAR topic shifts
@@ -213,11 +215,11 @@ The defendant was charged with breach of contract under Section 12. The plaintif
 """
 
 print("\n  📝 Demo Text (3 distinct topics):")
-print("  " + "-"*70)
+print("  " + "-" * 70)
 print("  Topic 1: Space exploration (sentences 1-4)")
 print("  Topic 2: Cooking recipe (sentences 5-8)")
 print("  Topic 3: Legal case (sentences 9-12)")
-print("  " + "-"*70)
+print("  " + "-" * 70)
 
 semantic_splitter = SemanticChunker(
     embeddings=embeddings_model,
@@ -226,27 +228,31 @@ semantic_splitter = SemanticChunker(
     # - "standard_deviation": Split where similarity is X std devs below mean
     # - "interquartile": Split where similarity is below Q1 - 1.5*IQR (outlier detection)
     breakpoint_threshold_type="standard_deviation",
-    breakpoint_threshold_amount=1.0  # Split when similarity drops 1 std dev below mean
+    breakpoint_threshold_amount=1.0,  # Split when similarity drops 1 std dev below mean
 )
 
 demo_doc = Document(page_content=demo_paragraph.strip())
 semantic_chunks = semantic_splitter.split_documents([demo_doc])
 print(f"\n✓ Created {len(semantic_chunks)} chunks")
-print("  Note: Semantic chunking results vary based on embedding model and threshold settings")
+print(
+    "  Note: Semantic chunking results vary based on embedding model and threshold settings"
+)
 
 # Show each semantic chunk
 print("\n  📊 Resulting Semantic Chunks:")
-print("  " + "-"*70)
+print("  " + "-" * 70)
 for i, chunk in enumerate(semantic_chunks):
-    print(f"\n  Chunk {i+1} ({len(chunk.page_content)} chars):")
-    print("  " + "~"*60)
+    print(f"\n  Chunk {i + 1} ({len(chunk.page_content)} chars):")
+    print("  " + "~" * 60)
     # Show full content for clarity
-    for line in chunk.page_content.strip().split('\n'):
+    for line in chunk.page_content.strip().split("\n"):
         if line.strip():
             print(f"    {line.strip()}")
-    print("  " + "~"*60)
+    print("  " + "~" * 60)
 
-print("\n  ✨ The chunker attempts to detect topic shifts between space → cooking → legal")
+print(
+    "\n  ✨ The chunker attempts to detect topic shifts between space → cooking → legal"
+)
 print("  Adjust breakpoint_threshold_amount (lower = more sensitive) if results vary.")
 
 # =============================================================================
@@ -297,21 +303,21 @@ Check for missing indexes causing table scans.
 # Define which headers to split on
 # Format: (header_marker, metadata_key)
 headers_to_split_on = [
-    ("#", "Header 1"),    # H1 tags
-    ("##", "Header 2"),   # H2 tags  
+    ("#", "Header 1"),  # H1 tags
+    ("##", "Header 2"),  # H2 tags
     ("###", "Header 3"),  # H3 tags
 ]
 
 markdown_splitter = MarkdownHeaderTextSplitter(
     headers_to_split_on=headers_to_split_on,
-    strip_headers=False  # Keep headers in the chunk content (usually want True)
+    strip_headers=False,  # Keep headers in the chunk content (usually want True)
 )
 md_chunks = markdown_splitter.split_text(markdown_doc)
 
 print(f"✓ Created {len(md_chunks)} chunks from markdown")
-print(f"  Preserves document structure and header context")
+print("  Preserves document structure and header context")
 if md_chunks:
-    print(f"  Sample chunk with metadata:")
+    print("  Sample chunk with metadata:")
     print(f"    Content: {md_chunks[0].page_content[:80]}...")
     print(f"    Metadata: {md_chunks[0].metadata}")  # Shows header hierarchy!
 
@@ -357,15 +363,13 @@ headers_to_split_on_html = [
     ("h3", "Header 3"),
 ]
 
-html_splitter = HTMLHeaderTextSplitter(
-    headers_to_split_on=headers_to_split_on_html
-)
+html_splitter = HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on_html)
 html_chunks = html_splitter.split_text(html_doc)
 
 print(f"✓ Created {len(html_chunks)} chunks from HTML")
-print(f"  Respects HTML semantic structure")
+print("  Respects HTML semantic structure")
 if html_chunks:
-    print(f"  Sample chunk with metadata:")
+    print("  Sample chunk with metadata:")
     print(f"    Content: {html_chunks[0].page_content[:80]}...")
     print(f"    Metadata: {html_chunks[0].metadata}")
 
@@ -383,7 +387,7 @@ if html_chunks:
 # =============================================================================
 print("\n--- Strategy 6: Whole Documents (No Chunking) ---")
 print(f"✓ Using {len(documents)} whole documents")
-print(f"  Good for small documents like our tickets")
+print("  Good for small documents like our tickets")
 
 # ============================================================================
 # PART 2: Chroma Vector Store
@@ -398,13 +402,13 @@ print(f"  Good for small documents like our tickets")
 #
 # THIS IS OUR RECOMMENDED APPROACH FOR THE WORKSHOP!
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 2: Chroma Vector Store")
-print("="*80)
+print("=" * 80)
 
 # Use LangChain's embedding wrapper (handles API calls internally)
 embeddings_model = OpenAIEmbeddings(
-    model=os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')
+    model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 )
 
 query = "Authentication problems after password reset"
@@ -415,8 +419,7 @@ print("\nBuilding Chroma vector store...")
 # from_documents() APPENDS to existing collections, so without this
 # you'd get duplicate documents (and duplicate search results!) each run
 existing_store = Chroma(
-    collection_name="support_tickets",
-    persist_directory="./chroma_db"
+    collection_name="support_tickets", persist_directory="./chroma_db"
 )
 existing_store.delete_collection()
 
@@ -426,10 +429,10 @@ existing_store.delete_collection()
 #   3. Stores vectors + metadata + original text
 #   4. Persists to disk (if persist_directory specified)
 chroma_store = Chroma.from_documents(
-    documents=documents,              # Our LangChain Document objects
-    embedding=embeddings_model,       # OpenAI embeddings
-    collection_name="support_tickets",# Like a "table" in a database
-    persist_directory="./chroma_db"   # Save to disk for persistence
+    documents=documents,  # Our LangChain Document objects
+    embedding=embeddings_model,  # OpenAI embeddings
+    collection_name="support_tickets",  # Like a "table" in a database
+    persist_directory="./chroma_db",  # Save to disk for persistence
 )
 print("✓ Chroma store created and persisted")
 
@@ -481,11 +484,13 @@ for i, doc in enumerate(chroma_results, 1):
 print("\n--- Using MMR for Diverse Results ---")
 mmr_results = chroma_store.max_marginal_relevance_search(query, k=3)
 
-print(f"\nMMR Results (more diverse):")
+print("\nMMR Results (more diverse):")
 for i, doc in enumerate(mmr_results, 1):
     print(f"\n#{i}")
     print(f"Ticket: {doc.metadata['ticket_id']}")
-    print(f"Title: {tickets[int(doc.metadata['ticket_id'].split('-')[1]) - 1]['title']}")
+    print(
+        f"Title: {tickets[int(doc.metadata['ticket_id'].split('-')[1]) - 1]['title']}"
+    )
 
 # ============================================================================
 # PART 3: Metadata Filtering
@@ -504,9 +509,9 @@ for i, doc in enumerate(mmr_results, 1):
 #
 # This is MUCH faster than filtering after retrieval!
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 3: Metadata Filtering")
-print("="*80)
+print("=" * 80)
 
 # -----------------------------------------------------------------------------
 # Example 1: Filter by category
@@ -518,7 +523,7 @@ print("\nSearching only in 'Authentication' category:")
 filtered_results = chroma_store.similarity_search(
     query,
     k=3,
-    filter={"category": "Authentication"}  # Only match this category
+    filter={"category": "Authentication"},  # Only match this category
 )
 
 print(f"\nFiltered results ({len(filtered_results)}):")
@@ -538,7 +543,7 @@ print("\n\nSearching only 'High' priority tickets:")
 high_priority_results = chroma_store.similarity_search(
     "Database performance issues",
     k=3,
-    filter={"priority": "High"}  # Only high priority
+    filter={"priority": "High"},  # Only high priority
 )
 
 print(f"\nHigh priority results ({len(high_priority_results)}):")
@@ -562,32 +567,28 @@ for i, doc in enumerate(high_priority_results, 1):
 #   3. Compare results
 #   4. Measure relevance (which found the right answer?)
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 4: Evaluating Chunking Strategies")
-print("="*80)
+print("=" * 80)
 
 # Build stores with different chunking
 print("\nBuilding vector stores with different chunking strategies...")
 
 # Store 1: Whole documents (no chunking)
 store_whole = Chroma.from_documents(
-    documents=documents,
-    embedding=embeddings_model,
-    collection_name="whole_docs"
+    documents=documents, embedding=embeddings_model, collection_name="whole_docs"
 )
 
 # Store 2: Fixed-size chunks (may split mid-sentence)
 store_fixed = Chroma.from_documents(
-    documents=fixed_chunks,
-    embedding=embeddings_model,
-    collection_name="fixed_chunks"
+    documents=fixed_chunks, embedding=embeddings_model, collection_name="fixed_chunks"
 )
 
 # Store 3: Recursive chunks (splits at natural boundaries)
 store_recursive = Chroma.from_documents(
     documents=recursive_chunks,
     embedding=embeddings_model,
-    collection_name="recursive_chunks"
+    collection_name="recursive_chunks",
 )
 
 test_query = "Database connection failures"
@@ -597,7 +598,7 @@ print(f"\nTest query: '{test_query}'")
 stores = [
     ("Whole Documents", store_whole),
     ("Fixed Chunks", store_fixed),
-    ("Recursive Chunks", store_recursive)
+    ("Recursive Chunks", store_recursive),
 ]
 
 for name, store in stores:
@@ -610,9 +611,9 @@ for name, store in stores:
 # ============================================================================
 # SUMMARY
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("DEMO COMPLETE!")
-print("="*80)
+print("=" * 80)
 print("""
 KEY TAKEAWAYS:
 ━━━━━━━━━━━━━━━
@@ -635,4 +636,3 @@ KEY TAKEAWAYS:
 
 NEXT: Module 3 - Indexing Strategies
 """)
-

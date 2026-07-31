@@ -69,7 +69,9 @@ print("\n2. API key")
 
 api_key = os.getenv("OPENAI_API_KEY", "")
 if not api_key:
-    report(False, "OPENAI_API_KEY", "not set -- copy .env.example to .env and add your key")
+    report(
+        False, "OPENAI_API_KEY", "not set -- copy .env.example to .env and add your key"
+    )
 elif api_key.startswith("sk-your-key") or "your_openai_api_key" in api_key:
     report(False, "OPENAI_API_KEY", "still the placeholder from .env.example")
 else:
@@ -81,7 +83,7 @@ if not ok:
     print("\nSkipping live API checks -- fix the failures above first.")
     sys.exit(1)
 
-from openai import OpenAI  # noqa: E402 -- deliberately after the import check
+from openai import OpenAI
 
 client = OpenAI(api_key=api_key, timeout=30.0)
 
@@ -104,28 +106,36 @@ try:
     resp = client.chat.completions.create(
         model=CHAT_MODEL,
         messages=[{"role": "user", "content": "Find tickets about login failures."}],
-        tools=[{
-            "type": "function",
-            "function": {
-                "name": "search_tickets",
-                "description": "Search past support tickets",
-                "parameters": {
-                    "type": "object",
-                    "properties": {"query": {"type": "string"}},
-                    "required": ["query"],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_tickets",
+                    "description": "Search past support tickets",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
                 },
-            },
-        }],
+            }
+        ],
         reasoning_effort="none",
     )
     calls = resp.choices[0].message.tool_calls
-    report(bool(calls), "function tools", calls[0].function.name if calls else "model did not call the tool")
+    report(
+        bool(calls),
+        "function tools",
+        calls[0].function.name if calls else "model did not call the tool",
+    )
 except Exception as exc:  # noqa: BLE001
     report(False, "function tools", f"{type(exc).__name__}: {str(exc)[:200]}")
 
 print(f"\n4. Embedding model: {EMBED_MODEL}")
 try:
-    emb = client.embeddings.create(model=EMBED_MODEL, input="login failure after password reset")
+    emb = client.embeddings.create(
+        model=EMBED_MODEL, input="login failure after password reset"
+    )
     vec = emb.data[0].embedding
     report(True, "embedding", f"{len(vec)} dimensions")
 except Exception as exc:  # noqa: BLE001

@@ -58,14 +58,14 @@ evaluation_queries = [
         "query_id": "Q1",
         "question": "How do I fix authentication failures?",
         "relevant_ticket_ids": ["TICK-001", "TICK-011", "TICK-014"],
-        "category": "Authentication"
+        "category": "Authentication",
     },
     {
         "query_id": "Q2",
         "question": "What causes database timeouts?",
         "relevant_ticket_ids": ["TICK-002"],
-        "category": "Database"
-    }
+        "category": "Database",
+    },
 ]
 ```
 
@@ -182,24 +182,28 @@ def calculate_retrieval_metrics(retrieved_ids, relevant_ids, k):
     retrieved_k = retrieved_ids[:k]
     relevant_set = set(relevant_ids)
     retrieved_set = set(retrieved_k)
-    
+
     # True positives
     true_positives = len(relevant_set & retrieved_set)
-    
+
     # Precision@K
     precision = true_positives / k if k > 0 else 0
-    
+
     # Recall@K
     recall = true_positives / len(relevant_set) if relevant_set else 0
-    
+
     # F1 Score
-    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    
+    f1 = (
+        (2 * precision * recall) / (precision + recall)
+        if (precision + recall) > 0
+        else 0
+    )
+
     return {
-        'precision': precision,
-        'recall': recall,
-        'f1': f1,
-        'true_positives': true_positives
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "true_positives": true_positives,
     }
 ```
 
@@ -356,18 +360,18 @@ Output only the score:"""
 ```python
 def comprehensive_evaluation(question, answer, context_docs, reference):
     metrics = {
-        'groundedness': evaluate_groundedness(answer, context_docs),
-        'completeness': evaluate_completeness(question, answer, reference),
-        'relevance': evaluate_relevance(question, answer)
+        "groundedness": evaluate_groundedness(answer, context_docs),
+        "completeness": evaluate_completeness(question, answer, reference),
+        "relevance": evaluate_relevance(question, answer),
     }
-    
+
     # Overall score (weighted average)
-    metrics['overall'] = (
-        0.5 * metrics['groundedness'] +
-        0.3 * metrics['completeness'] +
-        0.2 * metrics['relevance']
+    metrics["overall"] = (
+        0.5 * metrics["groundedness"]
+        + 0.3 * metrics["completeness"]
+        + 0.2 * metrics["relevance"]
     )
-    
+
     return metrics
 ```
 
@@ -437,51 +441,43 @@ Fixes:
 ```python
 def compare_configurations(eval_queries, configs):
     results = {}
-    
+
     for name, config in configs.items():
         print(f"Testing {name}...")
         metrics = {
-            'precision': [],
-            'recall': [],
-            'f1': [],
-            'groundedness': [],
-            'completeness': []
+            "precision": [],
+            "recall": [],
+            "f1": [],
+            "groundedness": [],
+            "completeness": [],
         }
-        
+
         for query in eval_queries:
             # Retrieve with this config
-            docs = config['retriever'].get_relevant_documents(
-                query['question'], 
-                k=config['k']
+            docs = config["retriever"].get_relevant_documents(
+                query["question"], k=config["k"]
             )
-            
+
             # Retrieval metrics
-            retrieved_ids = [d.metadata['id'] for d in docs]
+            retrieved_ids = [d.metadata["id"] for d in docs]
             retrieval = calculate_retrieval_metrics(
-                retrieved_ids,
-                query['relevant_ids'],
-                k=config['k']
+                retrieved_ids, query["relevant_ids"], k=config["k"]
             )
-            metrics['precision'].append(retrieval['precision'])
-            metrics['recall'].append(retrieval['recall'])
-            metrics['f1'].append(retrieval['f1'])
-            
+            metrics["precision"].append(retrieval["precision"])
+            metrics["recall"].append(retrieval["recall"])
+            metrics["f1"].append(retrieval["f1"])
+
             # Generation metrics (if reference available)
-            if 'reference' in query:
-                answer = config['chain'].invoke(query['question'])
-                metrics['groundedness'].append(
-                    evaluate_groundedness(answer, docs)
+            if "reference" in query:
+                answer = config["chain"].invoke(query["question"])
+                metrics["groundedness"].append(evaluate_groundedness(answer, docs))
+                metrics["completeness"].append(
+                    evaluate_completeness(query["question"], answer, query["reference"])
                 )
-                metrics['completeness'].append(
-                    evaluate_completeness(query['question'], answer, query['reference'])
-                )
-        
+
         # Average metrics
-        results[name] = {
-            metric: np.mean(values)
-            for metric, values in metrics.items()
-        }
-    
+        results[name] = {metric: np.mean(values) for metric, values in metrics.items()}
+
     return results
 ```
 
@@ -489,21 +485,17 @@ def compare_configurations(eval_queries, configs):
 
 ```python
 configs = {
-    'baseline': {
-        'retriever': vector_store.as_retriever(search_kwargs={'k': 3}),
-        'k': 3,
-        'chain': basic_chain
+    "baseline": {
+        "retriever": vector_store.as_retriever(search_kwargs={"k": 3}),
+        "k": 3,
+        "chain": basic_chain,
     },
-    'hybrid': {
-        'retriever': ensemble_retriever,
-        'k': 5,
-        'chain': basic_chain
+    "hybrid": {"retriever": ensemble_retriever, "k": 5, "chain": basic_chain},
+    "optimized": {
+        "retriever": mmr_retriever,
+        "k": 5,
+        "chain": advanced_chain_with_examples,
     },
-    'optimized': {
-        'retriever': mmr_retriever,
-        'k': 5,
-        'chain': advanced_chain_with_examples
-    }
 }
 
 results = compare_configurations(eval_queries, configs)
@@ -512,12 +504,14 @@ results = compare_configurations(eval_queries, configs)
 print(f"{'Config':<15} {'P@K':<8} {'R@K':<8} {'F1':<8} {'Ground':<8} {'Complete':<8}")
 print("-" * 60)
 for name, metrics in results.items():
-    print(f"{name:<15} "
-          f"{metrics['precision']:<8.3f} "
-          f"{metrics['recall']:<8.3f} "
-          f"{metrics['f1']:<8.3f} "
-          f"{metrics['groundedness']:<8.3f} "
-          f"{metrics['completeness']:<8.3f}")
+    print(
+        f"{name:<15} "
+        f"{metrics['precision']:<8.3f} "
+        f"{metrics['recall']:<8.3f} "
+        f"{metrics['f1']:<8.3f} "
+        f"{metrics['groundedness']:<8.3f} "
+        f"{metrics['completeness']:<8.3f}"
+    )
 ```
 
 **Output:**
@@ -545,26 +539,26 @@ Use these thresholds as a deployment gate. One RED metric blocks the release; an
 def get_release_decision(metrics):
     """Returns PASS, REVIEW, or BLOCK based on evaluation metrics."""
     thresholds = {
-        'precision':    {'pass': 0.80, 'review': 0.70},
-        'recall':       {'pass': 0.70, 'review': 0.60},
-        'f1':           {'pass': 0.75, 'review': 0.65},
-        'groundedness': {'pass': 0.85, 'review': 0.75},
-        'completeness': {'pass': 0.75, 'review': 0.65},
+        "precision": {"pass": 0.80, "review": 0.70},
+        "recall": {"pass": 0.70, "review": 0.60},
+        "f1": {"pass": 0.75, "review": 0.65},
+        "groundedness": {"pass": 0.85, "review": 0.75},
+        "completeness": {"pass": 0.75, "review": 0.65},
     }
     red_flags, yellow_flags = [], []
     for metric, value in metrics.items():
         t = thresholds.get(metric)
         if t is None:
             continue
-        if value < t['review']:
+        if value < t["review"]:
             red_flags.append(f"{metric} = {value:.2f} (min {t['review']})")
-        elif value < t['pass']:
+        elif value < t["pass"]:
             yellow_flags.append(f"{metric} = {value:.2f} (target {t['pass']})")
     if red_flags:
-        return 'BLOCK', red_flags
+        return "BLOCK", red_flags
     elif yellow_flags:
-        return 'REVIEW', yellow_flags
-    return 'PASS', []
+        return "REVIEW", yellow_flags
+    return "PASS", []
 ```
 
 **Decision rules:**
@@ -579,58 +573,53 @@ class RAGEvaluator:
     def __init__(self, rag_system, eval_queries):
         self.rag_system = rag_system
         self.eval_queries = eval_queries
-    
+
     def run_evaluation(self):
         results = []
-        
+
         for query_data in self.eval_queries:
             # Get answer and sources
-            response = self.rag_system.query(query_data['question'])
-            
+            response = self.rag_system.query(query_data["question"])
+
             # Retrieval evaluation
             retrieval_metrics = calculate_retrieval_metrics(
-                response['source_ids'],
-                query_data['relevant_ids'],
-                k=3
+                response["source_ids"], query_data["relevant_ids"], k=3
             )
-            
+
             # Generation evaluation
             generation_metrics = {
-                'groundedness': evaluate_groundedness(
-                    response['answer'],
-                    response['source_docs']
+                "groundedness": evaluate_groundedness(
+                    response["answer"], response["source_docs"]
                 ),
-                'completeness': evaluate_completeness(
-                    query_data['question'],
-                    response['answer'],
-                    query_data['reference']
-                )
+                "completeness": evaluate_completeness(
+                    query_data["question"], response["answer"], query_data["reference"]
+                ),
             }
-            
+
             # Combine
             result = {
-                'query_id': query_data['query_id'],
-                'question': query_data['question'],
+                "query_id": query_data["query_id"],
+                "question": query_data["question"],
                 **retrieval_metrics,
-                **generation_metrics
+                **generation_metrics,
             }
             results.append(result)
-        
+
         return self.summarize_results(results)
-    
+
     def summarize_results(self, results):
         summary = {}
-        metrics = ['precision', 'recall', 'f1', 'groundedness', 'completeness']
-        
+        metrics = ["precision", "recall", "f1", "groundedness", "completeness"]
+
         for metric in metrics:
             values = [r[metric] for r in results]
             summary[metric] = {
-                'mean': np.mean(values),
-                'std': np.std(values),
-                'min': np.min(values),
-                'max': np.max(values)
+                "mean": np.mean(values),
+                "std": np.std(values),
+                "min": np.min(values),
+                "max": np.max(values),
             }
-        
+
         return summary, results
 ```
 
@@ -642,20 +631,18 @@ While LLM-as-judge is useful, human evaluation remains the gold standard.
 
 ```python
 evaluation_form = {
-    'query_id': 'Q1',
-    'question': "How do I fix authentication issues?",
-    'answer': "...",
-    'sources': ["TICK-001", "TICK-011"],
-    
-    'ratings': {
-        'retrieval_quality': 1-5,  # Were right docs retrieved?
-        'answer_accuracy': 1-5,  # Is answer correct?
-        'answer_completeness': 1-5,  # Is answer complete?
-        'clarity': 1-5,  # Is answer clear?
-        'groundedness': 1-5  # Is answer supported?
+    "query_id": "Q1",
+    "question": "How do I fix authentication issues?",
+    "answer": "...",
+    "sources": ["TICK-001", "TICK-011"],
+    "ratings": {
+        "retrieval_quality": 1 - 5,  # Were right docs retrieved?
+        "answer_accuracy": 1 - 5,  # Is answer correct?
+        "answer_completeness": 1 - 5,  # Is answer complete?
+        "clarity": 1 - 5,  # Is answer clear?
+        "groundedness": 1 - 5,  # Is answer supported?
     },
-    
-    'feedback': "Optional comments..."
+    "feedback": "Optional comments...",
 }
 ```
 
@@ -683,29 +670,26 @@ kappa = cohen_kappa_score(rater1, rater2)
 class RAGMonitor:
     def __init__(self):
         self.metrics_history = []
-    
+
     def log_query(self, query, response, retrieval_metrics, generation_metrics):
         entry = {
-            'timestamp': datetime.now(),
-            'query': query,
-            'latency': response['latency'],
+            "timestamp": datetime.now(),
+            "query": query,
+            "latency": response["latency"],
             **retrieval_metrics,
-            **generation_metrics
+            **generation_metrics,
         }
         self.metrics_history.append(entry)
-    
+
     def get_daily_summary(self, date):
-        day_metrics = [
-            m for m in self.metrics_history
-            if m['timestamp'].date() == date
-        ]
-        
+        day_metrics = [m for m in self.metrics_history if m["timestamp"].date() == date]
+
         return {
-            'total_queries': len(day_metrics),
-            'avg_precision': np.mean([m['precision'] for m in day_metrics]),
-            'avg_recall': np.mean([m['recall'] for m in day_metrics]),
-            'avg_groundedness': np.mean([m['groundedness'] for m in day_metrics]),
-            'avg_latency': np.mean([m['latency'] for m in day_metrics])
+            "total_queries": len(day_metrics),
+            "avg_precision": np.mean([m["precision"] for m in day_metrics]),
+            "avg_recall": np.mean([m["recall"] for m in day_metrics]),
+            "avg_groundedness": np.mean([m["groundedness"] for m in day_metrics]),
+            "avg_latency": np.mean([m["latency"] for m in day_metrics]),
         }
 ```
 
@@ -714,16 +698,16 @@ class RAGMonitor:
 ```python
 def check_thresholds(metrics):
     alerts = []
-    
-    if metrics['precision'] < 0.7:
+
+    if metrics["precision"] < 0.7:
         alerts.append("WARNING: Precision below threshold")
-    
-    if metrics['groundedness'] < 0.75:
+
+    if metrics["groundedness"] < 0.75:
         alerts.append("CRITICAL: High hallucination risk")
-    
-    if metrics['latency'] > 5.0:
+
+    if metrics["latency"] > 5.0:
         alerts.append("WARNING: Slow response time")
-    
+
     return alerts
 ```
 
@@ -776,12 +760,12 @@ from ragas.metrics import (
     faithfulness,
     answer_relevancy,
     context_precision,
-    context_recall
+    context_recall,
 )
 
 results = evaluate(
     dataset=eval_dataset,
-    metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
 )
 ```
 
@@ -791,9 +775,7 @@ from langchain.evaluation import load_evaluator
 
 evaluator = load_evaluator("qa", llm=llm)
 result = evaluator.evaluate_strings(
-    prediction=answer,
-    reference=reference,
-    input=question
+    prediction=answer, reference=reference, input=question
 )
 ```
 

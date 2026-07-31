@@ -90,11 +90,10 @@ Tool(
     name="SearchSimilarTickets",
     # BEFORE: Generic description
     # description="Search for similar tickets"
-    
     # AFTER: More specific
     description="""Use this for troubleshooting questions like "how to fix", 
     "why is X happening", or "similar issues to Y". 
-    Searches semantically - finds related tickets even if words don't match exactly."""
+    Searches semantically - finds related tickets even if words don't match exactly.""",
 )
 ```
 
@@ -171,14 +170,16 @@ make m6
 **Open `modules/6_agentic_rag/demo.py` and search for `def run_agent(`. The system message is the `SystemMessage(content=...)` just below it -- note there is a second copy further down in `run_conversational_agent()`; edit the first one. Modify it:**
 
 ```python
-SystemMessage(content="""You are an expert support desk assistant.
+SystemMessage(
+    content="""You are an expert support desk assistant.
 
 ALWAYS follow these rules:
 1. State which tool you're using before searching
 2. If the query is ambiguous, ask a clarifying question FIRST
 3. When providing solutions, rate your confidence (High/Medium/Low)
 4. Suggest related tickets the user might want to explore
-""")
+"""
+)
 ```
 
 **Test with**: "Issues with users logging in"
@@ -204,14 +205,14 @@ make m6
 ```python
 while True:
     user_input = input("\nYou: ").strip()
-    
-    if user_input.lower() in ['quit', 'exit', 'q']:
+
+    if user_input.lower() in ["quit", "exit", "q"]:
         print("Goodbye!")
         break
-    
+
     if not user_input:
         continue
-    
+
     response = run_agent(user_input)
     print(f"\nAssistant: {response}")
 ```
@@ -303,18 +304,18 @@ test_cases = [
     {
         "query": "How do I fix login issues?",
         "expected_tool": "SearchSimilarTickets",
-        "should_contain": ["authentication", "TICK"]
+        "should_contain": ["authentication", "TICK"],
     },
     {
         "query": "Show ticket TICK-001",
         "expected_tool": "GetTicketByID",
-        "should_contain": ["TICK-001"]
+        "should_contain": ["TICK-001"],
     },
     {
         "query": "How many tickets are there?",
         "expected_tool": "GetTicketStatistics",
-        "should_contain": ["total", "category"]
-    }
+        "should_contain": ["total", "category"],
+    },
 ]
 
 for test in test_cases:

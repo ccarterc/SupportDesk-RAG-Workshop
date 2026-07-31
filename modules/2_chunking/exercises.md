@@ -34,18 +34,18 @@ cannot damage anything permanently.
 **Open `modules/2_chunking/demo.py` and search for `fixed_splitter = CharacterTextSplitter`:**
 ```python
 fixed_splitter = CharacterTextSplitter(
-    chunk_size=200,      # Maximum characters per chunk
-    chunk_overlap=20,    # Characters to repeat between chunks (10% overlap)
-    separator="\n"       # Prefer splitting on newlines when possible
+    chunk_size=200,  # Maximum characters per chunk
+    chunk_overlap=20,  # Characters to repeat between chunks (10% overlap)
+    separator="\n",  # Prefer splitting on newlines when possible
 )
 ```
 
 **Change the two numbers**:
 ```python
 fixed_splitter = CharacterTextSplitter(
-    chunk_size=500,      # was 200
-    chunk_overlap=50,    # was 20
-    separator="\n"
+    chunk_size=500,  # was 200
+    chunk_overlap=50,  # was 20
+    separator="\n",
 )
 ```
 
@@ -123,18 +123,16 @@ make m2
 **In the same file, search for `filtered_results = chroma_store`:**
 ```python
 filtered_results = chroma_store.similarity_search(
-    query,
-    k=3,
-    filter={"category": "Authentication"}
+    query, k=3, filter={"category": "Authentication"}
 )
 ```
 
 **Change the filter to search different categories**:
 ```python
 # Try each of these:
-filter={"category": "Database"}
-filter={"category": "Performance"}
-filter={"category": "Email"}
+filter = {"category": "Database"}
+filter = {"category": "Performance"}
+filter = {"category": "Email"}
 ```
 
 **Run it:**
@@ -159,22 +157,24 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 
 # Create documents
 documents = []
 for ticket in tickets:
     full_text = f"""
-Ticket ID: {ticket['ticket_id']}
-Title: {ticket['title']}
-Description: {ticket['description']}
-Resolution: {ticket['resolution']}
+Ticket ID: {ticket["ticket_id"]}
+Title: {ticket["title"]}
+Description: {ticket["description"]}
+Resolution: {ticket["resolution"]}
     """.strip()
     documents.append(Document(page_content=full_text))
 
 print(f"Total documents: {len(documents)}")
-print(f"Avg document length: {sum(len(d.page_content) for d in documents) // len(documents)} chars")
+print(
+    f"Avg document length: {sum(len(d.page_content) for d in documents) // len(documents)} chars"
+)
 print()
 
 # Compare chunk sizes
@@ -184,10 +184,7 @@ print("Chunk Size | # Chunks | Avg Chunk Length")
 print("-" * 45)
 
 for size in chunk_sizes:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=size,
-        chunk_overlap=size // 10
-    )
+    splitter = RecursiveCharacterTextSplitter(chunk_size=size, chunk_overlap=size // 10)
     chunks = splitter.split_documents(documents)
     avg_len = sum(len(c.page_content) for c in chunks) // len(chunks) if chunks else 0
     print(f"{size:>10} | {len(chunks):>8} | {avg_len:>16}")
@@ -263,7 +260,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load and create documents
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 
 documents = []
@@ -271,15 +268,15 @@ for ticket in tickets:
     doc = Document(
         page_content=f"{ticket['title']}. {ticket['description']}",
         metadata={
-            'ticket_id': ticket['ticket_id'],
-            'category': ticket['category'],
-            'priority': ticket['priority']
-        }
+            "ticket_id": ticket["ticket_id"],
+            "category": ticket["category"],
+            "priority": ticket["priority"],
+        },
     )
     documents.append(doc)
 
 # Create vector store
-embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 store = Chroma.from_documents(documents, embeddings, collection_name="exercise7")
 
 # Search with combined filter
@@ -294,7 +291,9 @@ print(f"Query: '{query}'")
 print(f"Filter: High priority + Authentication category")
 print(f"\nResults ({len(results)}):")
 for doc in results:
-    print(f"  [{doc.metadata['priority']}] [{doc.metadata['category']}] {doc.metadata['ticket_id']}")
+    print(
+        f"  [{doc.metadata['priority']}] [{doc.metadata['category']}] {doc.metadata['ticket_id']}"
+    )
 ```
 
 **Try changing the filter to**:
@@ -330,26 +329,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load data
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 
 documents = [
     Document(
         page_content=f"{t['title']}. {t['description']}",
-        metadata={'ticket_id': t['ticket_id'], 'category': t['category']}
+        metadata={"ticket_id": t["ticket_id"], "category": t["category"]},
     )
     for t in tickets
 ]
 
-embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # Step 1: Build and save (Chroma persists with persist_directory)
 print("Building vector store...")
 store = Chroma.from_documents(
-    documents, 
-    embeddings, 
+    documents,
+    embeddings,
     collection_name="my_collection",
-    persist_directory="./my_chroma_db"
+    persist_directory="./my_chroma_db",
 )
 print("✓ Saved to ./my_chroma_db")
 
@@ -358,7 +357,7 @@ print("\nLoading vector store...")
 loaded_store = Chroma(
     persist_directory="./my_chroma_db",
     embedding_function=embeddings,
-    collection_name="my_collection"
+    collection_name="my_collection",
 )
 print("✓ Loaded from disk")
 
@@ -433,7 +432,7 @@ fixed_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=30
 fixed_chunks = fixed_splitter.split_documents([doc])
 
 # Semantic chunking
-embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 semantic_splitter = SemanticChunker(embeddings, breakpoint_threshold_type="percentile")
 semantic_chunks = semantic_splitter.split_documents([doc])
 
@@ -443,7 +442,7 @@ for i, chunk in enumerate(fixed_chunks, 1):
     print(f"\nChunk {i} ({len(chunk.page_content)} chars):")
     print(f"  {chunk.page_content[:80]}...")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("\nSemantic Chunking Results:")
 print(f"Number of chunks: {len(semantic_chunks)}")
 for i, chunk in enumerate(semantic_chunks, 1):
@@ -465,10 +464,12 @@ make m2
 ```python
 # Fixed size
 from langchain_text_splitters import CharacterTextSplitter
+
 splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=20)
 
 # Recursive (smarter)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
 
 # Apply to documents
@@ -481,17 +482,10 @@ chunks = splitter.split_documents(documents)
 from langchain_community.vectorstores import Chroma
 
 # Create with persistence
-store = Chroma.from_documents(
-    documents, 
-    embeddings, 
-    persist_directory="./chroma_db"
-)
+store = Chroma.from_documents(documents, embeddings, persist_directory="./chroma_db")
 
 # Load existing store
-store = Chroma(
-    persist_directory="./chroma_db",
-    embedding_function=embeddings
-)
+store = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
 ```
 
 ### Searching

@@ -190,14 +190,13 @@ def ingest_documents(file_paths):
         # Load document
         with open(path) as f:
             content = f.read()
-        
+
         # Create document object
         doc = Document(
-            page_content=content,
-            metadata={'source': path, 'timestamp': datetime.now()}
+            page_content=content, metadata={"source": path, "timestamp": datetime.now()}
         )
         documents.append(doc)
-    
+
     return documents
 ```
 
@@ -205,10 +204,7 @@ def ingest_documents(file_paths):
 ```python
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=50
-)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 chunks = text_splitter.split_documents(documents)
 ```
 
@@ -216,9 +212,7 @@ chunks = text_splitter.split_documents(documents)
 ```python
 from langchain_openai import OpenAIEmbeddings
 
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small"
-)
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 ```
 
 #### 4. Vector Store
@@ -230,16 +224,13 @@ vector_store = Chroma.from_documents(
     embedding=embeddings,
     collection_name="supportdesk_rag",
     persist_directory="./vectorstore",
-    collection_metadata={"hnsw:space": "cosine"}  # cosine distance for semantic search
+    collection_metadata={"hnsw:space": "cosine"},  # cosine distance for semantic search
 )
 ```
 
 #### 5. Retriever
 ```python
-retriever = vector_store.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 3}
-)
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 ```
 
 #### 6. Prompt Template
@@ -266,7 +257,7 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
     model="gpt-5.6-luna",
-    reasoning_effort="none"  # fast, non-reasoning call
+    reasoning_effort="none",  # fast, non-reasoning call
 )
 ```
 
@@ -323,16 +314,16 @@ from langchain_core.documents import Document
 
 doc = Document(
     page_content="Users cannot log in after resetting their password. "
-                 "Resolution: clear active sessions and force re-auth.",
+    "Resolution: clear active sessions and force re-auth.",
     metadata={
         "ticket_id": "TICK-001",
         "category": "authentication",
-        "priority": "high"
-    }
+        "priority": "high",
+    },
 )
 # Later, after retrieval:
-print(doc.page_content)          # → text the LLM reads
-print(doc.metadata["ticket_id"]) # → "TICK-001" shown as citation
+print(doc.page_content)  # → text the LLM reads
+print(doc.metadata["ticket_id"])  # → "TICK-001" shown as citation
 ```
 
 #### Step 2 — Breaking large documents into retrievable pieces: `RecursiveCharacterTextSplitter`
@@ -343,8 +334,8 @@ Some ticket descriptions are three lines. Others are three paragraphs. The embed
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,    # max characters per chunk
-    chunk_overlap=50   # overlap so context isn't lost at boundaries
+    chunk_size=500,  # max characters per chunk
+    chunk_overlap=50,  # overlap so context isn't lost at boundaries
 )
 chunks = splitter.split_documents(documents)
 # A 2,000-char ticket description becomes ~4 overlapping chunks,
@@ -362,8 +353,8 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # Embed a single query to see what a vector looks like
 vector = embeddings.embed_query("authentication failure after password reset")
-print(len(vector))   # → 1536 numbers
-print(vector[:4])    # → [0.023, -0.117, 0.045, 0.201, ...]
+print(len(vector))  # → 1536 numbers
+print(vector[:4])  # → [0.023, -0.117, 0.045, 0.201, ...]
 # "login broken after credential change" would produce a vector
 # pointing in nearly the same direction as this one.
 ```
@@ -382,15 +373,15 @@ vector_store = Chroma.from_documents(
     documents=chunks,
     embedding=embeddings,
     collection_name="supportdesk_rag",
-    persist_directory="./vectorstore",   # saved here after this call
-    collection_metadata={"hnsw:space": "cosine"}  # use cosine distance
+    persist_directory="./vectorstore",  # saved here after this call
+    collection_metadata={"hnsw:space": "cosine"},  # use cosine distance
 )
 
 # Subsequent runs: load from disk — no re-embedding cost
 vector_store = Chroma(
     collection_name="supportdesk_rag",
     embedding_function=embeddings,
-    persist_directory="./vectorstore"
+    persist_directory="./vectorstore",
 )
 ```
 
@@ -400,21 +391,17 @@ vector_store = Chroma(
 
 ```python
 # Default: top-3 most similar
-retriever = vector_store.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 3}
-)
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 
 # MMR: top-3 but diverse — avoids returning near-duplicate tickets
 mmr_retriever = vector_store.as_retriever(
-    search_type="mmr",
-    search_kwargs={"k": 3, "fetch_k": 10, "lambda_mult": 0.7}
+    search_type="mmr", search_kwargs={"k": 3, "fetch_k": 10, "lambda_mult": 0.7}
 )
 
 # Threshold: only return if score > 0.7, otherwise return nothing
 strict_retriever = vector_store.as_retriever(
     search_type="similarity_score_threshold",
-    search_kwargs={"score_threshold": 0.7, "k": 5}
+    search_kwargs={"score_threshold": 0.7, "k": 5},
 )
 
 # All three respond the same way to .invoke() — that's the interface
@@ -434,6 +421,7 @@ Because LCEL automatically wraps any callable into a `RunnableLambda`, `format_d
 def format_docs(docs):
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
+
 # Labelled version — tells the model which ticket each section came from
 def format_docs(docs):
     sections = []
@@ -441,6 +429,7 @@ def format_docs(docs):
         ticket_id = doc.metadata.get("ticket_id", f"Doc {i}")
         sections.append(f"[SOURCE {i}: {ticket_id}]\n{doc.page_content}")
     return "\n\n---\n\n".join(sections)
+
 
 # Used in a chain — LCEL wraps format_docs as a RunnableLambda automatically
 chain = retriever | format_docs | prompt | llm | StrOutputParser()
@@ -491,23 +480,29 @@ Question: {question}
 # Produces: one HumanMessage with the filled string
 
 # ── from_messages: system + human, rules separated from input ─────────
-rag_prompt = ChatPromptTemplate.from_messages([
-    ("system",
-     "You are SupportDesk AI. Use ONLY the sources below to answer.\n"
-     "Rules:\n"
-     "1. Cite [SOURCE N] after every claim\n"
-     "2. If the answer isn't in the sources, say 'I don't have that information'\n"
-     "3. Never use outside knowledge\n\n"
-     "Sources:\n{context}"),
-    ("human", "{question}"),
-])
+rag_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are SupportDesk AI. Use ONLY the sources below to answer.\n"
+            "Rules:\n"
+            "1. Cite [SOURCE N] after every claim\n"
+            "2. If the answer isn't in the sources, say 'I don't have that information'\n"
+            "3. Never use outside knowledge\n\n"
+            "Sources:\n{context}",
+        ),
+        ("human", "{question}"),
+    ]
+)
 # input_variables: ["context", "question"]
 # Produces: [SystemMessage("You are SupportDesk AI..."), HumanMessage("...")]
 
 # At runtime the chain calls this internally:
-filled = rag_prompt.invoke({"context": "TICK-001: ...", "question": "How do I fix auth failures?"})
-print(type(filled))         # → ChatPromptValue
-print(filled.to_messages()) # → [SystemMessage(...), HumanMessage(...)]
+filled = rag_prompt.invoke(
+    {"context": "TICK-001: ...", "question": "How do I fix auth failures?"}
+)
+print(type(filled))  # → ChatPromptValue
+print(filled.to_messages())  # → [SystemMessage(...), HumanMessage(...)]
 # This ChatPromptValue is passed directly to llm.invoke()
 ```
 
@@ -523,16 +518,23 @@ A single-turn RAG chain answers questions in isolation. If the user asks "How wa
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are SupportDesk AI. Answer from context only.\n\nContext:\n{context}"),
-    MessagesPlaceholder(variable_name="chat_history"),  # ← history injected here
-    ("human", "{question}"),
-])
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are SupportDesk AI. Answer from context only.\n\nContext:\n{context}",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),  # ← history injected here
+        ("human", "{question}"),
+    ]
+)
 
 # Build up history across turns
 history = []
 history.append(HumanMessage(content="What is TICK-001 about?"))
-history.append(AIMessage(content="TICK-001 is about login failures after password reset."))
+history.append(
+    AIMessage(content="TICK-001 is about login failures after password reset.")
+)
 
 # On the next call, the model sees both turns before the new question,
 # so "it" in "How was it resolved?" correctly refers to TICK-001.
@@ -554,8 +556,8 @@ llm = ChatOpenAI(
 
 # The raw return is an AIMessage, not a string
 response = llm.invoke("Hello")
-print(type(response))        # → <class 'langchain_core.messages.ai.AIMessage'>
-print(response.content)      # → "Hello! How can I help you today?"
+print(type(response))  # → <class 'langchain_core.messages.ai.AIMessage'>
+print(response.content)  # → "Hello! How can I help you today?"
 # This is why StrOutputParser is always the last step.
 ```
 
@@ -569,16 +571,16 @@ from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 # Plain text chain — StrOutputParser unwraps AIMessage.content
 chain = prompt | llm | StrOutputParser()
 answer = chain.invoke({"context": "...", "question": "..."})
-print(type(answer))   # → str
+print(type(answer))  # → str
 
 # Structured chain — prompt asks for JSON, parser converts the string to a dict
 json_prompt = ChatPromptTemplate.from_template(
     'Answer the question. Return JSON: {{"answer": "...", "confidence": 0-100}}\n'
-    'Context: {context}\nQuestion: {question}'
+    "Context: {context}\nQuestion: {question}"
 )
 scored_chain = json_prompt | llm | JsonOutputParser()
 result = scored_chain.invoke({"context": "...", "question": "..."})
-print(result["confidence"])   # → 87  (an int, not a string)
+print(result["confidence"])  # → 87  (an int, not a string)
 ```
 
 #### Step 10 — Wiring everything together: the Runnable interface and LCEL
@@ -594,11 +596,11 @@ Every construct described above — retriever, prompt template, LLM, parser — 
 
 ```python
 # All four methods work on any chain — they are inherited from Runnable
-answer  = chain.invoke("How do I fix auth failures?")           # one answer
-answers = chain.batch(["Q1", "Q2", "Q3"])                       # three answers, parallel
-for token in chain.stream("What caused the outage?"):           # stream word-by-word
+answer = chain.invoke("How do I fix auth failures?")  # one answer
+answers = chain.batch(["Q1", "Q2", "Q3"])  # three answers, parallel
+for token in chain.stream("What caused the outage?"):  # stream word-by-word
     print(token, end="", flush=True)
-answer  = await chain.ainvoke("async — use inside FastAPI")     # non-blocking
+answer = await chain.ainvoke("async — use inside FastAPI")  # non-blocking
 ```
 
 ##### How `|` actually works: `RunnableSequence` and `RunnableParallel`
@@ -609,7 +611,12 @@ When you place a plain Python dict as a step in a chain — `{"context": retriev
 
 ```python
 # What LCEL builds when you write this chain:
-chain = {"context": retriever | format_docs, "question": RunnablePassthrough()} | prompt | llm | StrOutputParser()
+chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
 
 # Is equivalent to (conceptually):
 # RunnableSequence(
@@ -634,7 +641,7 @@ broken = retriever | format_docs | prompt | llm  # prompt never gets {question}
 # With RunnablePassthrough, both values arrive at the prompt:
 working = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt   # now has both {context} and {question}
+    | prompt  # now has both {context} and {question}
     | llm
     | StrOutputParser()
 )
@@ -709,15 +716,12 @@ working_conv = (
         context=itemgetter("question") | retriever | format_docs
         #        ↑ extracts str from dict  ↑ now receives str  ↑ formats List[Document]
     )
-    | conv_prompt   # receives {"question": ..., "chat_history": ..., "context": ...} ✓
+    | conv_prompt  # receives {"question": ..., "chat_history": ..., "context": ...} ✓
     | llm
     | StrOutputParser()
 )
 
-working_conv.invoke({
-    "question": "How was it resolved?",
-    "chat_history": history
-})
+working_conv.invoke({"question": "How was it resolved?", "chat_history": history})
 ```
 
 **Rule of thumb:** use the `RunnableParallel` dict pattern when your chain input is a single string and you need to fan it out into multiple named values. Use `RunnablePassthrough.assign()` when your chain input is already a multi-key dict and you need to add one more computed key without losing the others.
@@ -731,7 +735,7 @@ from operator import itemgetter
 
 # These are equivalent — itemgetter is preferred style
 context_pipe_idiomatic = itemgetter("question") | retriever | format_docs
-context_pipe_lambda    = (lambda x: x["question"]) | retriever | format_docs
+context_pipe_lambda = (lambda x: x["question"]) | retriever | format_docs
 
 # Full conversational chain putting everything together:
 conv_chain = (
@@ -741,15 +745,14 @@ conv_chain = (
         # | retriever             → List[Document] (semantic search)
         # | format_docs           → str           (joins into context string)
     )
-    | conv_prompt    # str, List[Document] → ChatPromptValue
-    | llm            # ChatPromptValue     → AIMessage
+    | conv_prompt  # str, List[Document] → ChatPromptValue
+    | llm  # ChatPromptValue     → AIMessage
     | StrOutputParser()  # AIMessage       → str
 )
 
-answer = conv_chain.invoke({
-    "question": "How was it resolved?",
-    "chat_history": history
-})
+answer = conv_chain.invoke(
+    {"question": "How was it resolved?", "chat_history": history}
+)
 ```
 
 ##### Data flow through a full chain
@@ -782,18 +785,20 @@ Each link's output type is exactly what the next link expects. If you ever see a
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
+
 # Helper to format retrieved documents
 def format_docs(docs):
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
+
 
 # Build the chain using pipe operator
 chain = (
     {
         "context": retriever | format_docs,  # Get docs and format them
-        "question": RunnablePassthrough()     # Pass question through
+        "question": RunnablePassthrough(),  # Pass question through
     }
-    | prompt      # Fill in the prompt template
-    | llm         # Generate answer
+    | prompt  # Fill in the prompt template
+    | llm  # Generate answer
     | StrOutputParser()  # Extract string from response
 )
 
@@ -832,22 +837,26 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 chat_history = []
 
 # Create conversational prompt
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", "Answer using the context: {context}"),
-    MessagesPlaceholder(variable_name="history"),
-    ("human", "{question}")
-])
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "Answer using the context: {context}"),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{question}"),
+    ]
+)
 
 conv_chain = conv_prompt | llm | StrOutputParser()
 
+
 def ask_with_history(question):
     context = format_docs(retriever.invoke(question))
-    response = conv_chain.invoke({
-        "context": context, "history": chat_history, "question": question
-    })
+    response = conv_chain.invoke(
+        {"context": context, "history": chat_history, "question": question}
+    )
     chat_history.append(HumanMessage(content=question))
     chat_history.append(AIMessage(content=response))
     return response
+
 
 # Multi-turn conversation
 ask_with_history("What's ticket TICK-001?")
@@ -871,14 +880,18 @@ from langchain_core.output_parsers import StrOutputParser
 # Session-scoped in-memory history store
 history_store = {}
 
+
 def get_session_history(session_id: str):
     return history_store.setdefault(session_id, InMemoryChatMessageHistory())
 
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", "Answer using the context: {context}"),
-    MessagesPlaceholder(variable_name="history"),
-    ("human", "{question}")
-])
+
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "Answer using the context: {context}"),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{question}"),
+    ]
+)
 
 base_chain = conv_prompt | llm | StrOutputParser()
 
@@ -889,12 +902,14 @@ chain_with_history = RunnableWithMessageHistory(
     history_messages_key="history",
 )
 
+
 def ask_with_buffer(question: str, session_id: str = "user-1"):
     context = format_docs(retriever.invoke(question))
     return chain_with_history.invoke(
         {"context": context, "question": question},
-        config={"configurable": {"session_id": session_id}}
+        config={"configurable": {"session_id": session_id}},
     )
+
 
 # Multi-turn conversation (same session_id keeps memory)
 ask_with_buffer("What's ticket TICK-001?", session_id="demo")
@@ -989,10 +1004,7 @@ Answer:"""
 ### 1. Similarity Search (Default)
 
 ```python
-retriever = vector_store.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 3}
-)
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 ```
 
 **Best for:** Most queries
@@ -1005,8 +1017,8 @@ retriever = vector_store.as_retriever(
     search_kwargs={
         "k": 5,
         "fetch_k": 20,  # Fetch 20, return diverse 5
-        "lambda_mult": 0.5  # Balance relevance vs diversity
-    }
+        "lambda_mult": 0.5,  # Balance relevance vs diversity
+    },
 )
 ```
 
@@ -1020,8 +1032,8 @@ retriever = vector_store.as_retriever(
     search_type="similarity_score_threshold",
     search_kwargs={
         "score_threshold": 0.7,  # Only return if similarity > 0.7
-        "k": 5
-    }
+        "k": 5,
+    },
 )
 ```
 
@@ -1031,10 +1043,7 @@ retriever = vector_store.as_retriever(
 
 ```python
 retriever = vector_store.as_retriever(
-    search_kwargs={
-        "k": 3,
-        "filter": {"category": "authentication"}
-    }
+    search_kwargs={"k": 3, "filter": {"category": "authentication"}}
 )
 ```
 
@@ -1190,7 +1199,9 @@ refine_chain = refine_prompt | llm | StrOutputParser()
 
 answer = ""  # Start empty
 for doc in docs:
-    answer = refine_chain.invoke({"answer": answer, "doc": doc.page_content, "question": query})
+    answer = refine_chain.invoke(
+        {"answer": answer, "doc": doc.page_content, "question": query}
+    )
 ```
 
 **How it works:**
@@ -1239,10 +1250,7 @@ best = max(results, key=lambda x: x.get("confidence", 0))
 ```python
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
 
-streaming_llm = ChatOpenAI(
-    streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()]
-)
+streaming_llm = ChatOpenAI(streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
 
 streaming_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
@@ -1291,12 +1299,11 @@ def safe_query(question):
 ```python
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(min=1, max=10)
-)
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
 def query_with_retry(question):
     return chain.invoke(question)
+
 
 try:
     answer = query_with_retry(question)
@@ -1309,12 +1316,10 @@ except Exception as e:
 ```python
 import asyncio
 
+
 async def query_with_timeout(question, timeout=30):
     try:
-        return await asyncio.wait_for(
-            chain.ainvoke(question),
-            timeout=timeout
-        )
+        return await asyncio.wait_for(chain.ainvoke(question), timeout=timeout)
     except asyncio.TimeoutError:
         return "The query took too long. Please try a simpler question."
 ```
@@ -1325,6 +1330,7 @@ async def query_with_timeout(question, timeout=30):
 
 ```python
 from functools import lru_cache
+
 
 @lru_cache(maxsize=1000)
 def get_cached_embedding(text):
@@ -1350,10 +1356,9 @@ answers = chain.batch(questions)
 async def async_query(question):
     return await chain.ainvoke(question)
 
+
 # Process multiple queries concurrently
-answers = await asyncio.gather(*[
-    async_query(q) for q in questions
-])
+answers = await asyncio.gather(*[async_query(q) for q in questions])
 ```
 
 ### 4. Reduce Retrieved Chunks
@@ -1423,10 +1428,7 @@ return answer
 
 ✅ Return sources
 ```python
-return {
-    'answer': answer,
-    'sources': [doc.metadata['source'] for doc in docs]
-}
+return {"answer": answer, "sources": [doc.metadata["source"] for doc in docs]}
 ```
 
 ### 4. Expecting Sampling Settings to Enforce Grounding
@@ -1448,24 +1450,26 @@ llm = ChatOpenAI(model="gpt-5.6-luna", reasoning_effort="none")
 def test_rag_pipeline():
     test_cases = [
         {
-            'question': "What's TICK-001 about?",
-            'expected_keywords': ['password', 'reset', 'login'],
-            'expected_source': 'TICK-001'
+            "question": "What's TICK-001 about?",
+            "expected_keywords": ["password", "reset", "login"],
+            "expected_source": "TICK-001",
         }
     ]
-    
+
     for test in test_cases:
-        result = qa_chain(test['question'])
-        answer = result['result']
-        sources = result['source_documents']
-        
+        result = qa_chain(test["question"])
+        answer = result["result"]
+        sources = result["source_documents"]
+
         # Check keywords present
-        assert any(kw in answer.lower() for kw in test['expected_keywords'])
-        
+        assert any(kw in answer.lower() for kw in test["expected_keywords"])
+
         # Check correct source
-        assert any(test['expected_source'] in doc.metadata.get('ticket_id', '') 
-                   for doc in sources)
-        
+        assert any(
+            test["expected_source"] in doc.metadata.get("ticket_id", "")
+            for doc in sources
+        )
+
         print(f"✓ Test passed: {test['question']}")
 ```
 

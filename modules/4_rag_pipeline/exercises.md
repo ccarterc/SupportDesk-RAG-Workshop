@@ -100,14 +100,13 @@ make m4
 
 ```python
 # Change k from 3 to different values
-retriever = vector_store.as_retriever(search_kwargs={"k": 1})   # Very focused
-retriever = vector_store.as_retriever(search_kwargs={"k": 5})   # Broader
+retriever = vector_store.as_retriever(search_kwargs={"k": 1})  # Very focused
+retriever = vector_store.as_retriever(search_kwargs={"k": 5})  # Broader
 retriever = vector_store.as_retriever(search_kwargs={"k": 10})  # Maximum context
 
 # Try MMR for diverse results
 retriever = vector_store.as_retriever(
-    search_type="mmr",
-    search_kwargs={"k": 3, "fetch_k": 10}
+    search_type="mmr", search_kwargs={"k": 3, "fetch_k": 10}
 )
 ```
 
@@ -171,8 +170,7 @@ make m4
 
 ```python
 # Existing function already present in demo.py
-def rag_with_validation(query, retriever, llm, min_similarity_score=0.5):
-    ...
+def rag_with_validation(query, retriever, llm, min_similarity_score=0.5): ...
 ```
 
 **Goal:** Observe how stricter thresholds reduce risky answers.
@@ -205,7 +203,9 @@ stuff_prompt = ChatPromptTemplate.from_template(
 )
 stuff_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | stuff_prompt | llm | StrOutputParser()
+    | stuff_prompt
+    | llm
+    | StrOutputParser()
 )
 ```
 
@@ -226,7 +226,9 @@ combine_prompt = ChatPromptTemplate.from_template(
     "Combine these points to answer: {question}\n\nPoints:\n{summaries}"
 )
 combine_chain = combine_prompt | llm | StrOutputParser()
-result = combine_chain.invoke({"question": test_query, "summaries": "\n".join(individual_answers)})
+result = combine_chain.invoke(
+    {"question": test_query, "summaries": "\n".join(individual_answers)}
+)
 ```
 
 **Strategy 3 — REFINE:** Process docs sequentially, refining the answer each time.
@@ -236,9 +238,9 @@ initial_prompt = ChatPromptTemplate.from_template(
     "Answer the question using only this context.\n\n"
     "Context: {context}\n\nQuestion: {question}\n\nAnswer:"
 )
-current_answer = (initial_prompt | llm | StrOutputParser()).invoke({
-    "context": docs[0].page_content, "question": test_query
-})
+current_answer = (initial_prompt | llm | StrOutputParser()).invoke(
+    {"context": docs[0].page_content, "question": test_query}
+)
 
 # Steps 2..N: Refine with each remaining doc
 refine_prompt = ChatPromptTemplate.from_template(
@@ -247,9 +249,13 @@ refine_prompt = ChatPromptTemplate.from_template(
     "Refine the answer using the new context. If not useful, return unchanged.\n\nRefined answer:"
 )
 for doc in docs[1:]:
-    current_answer = (refine_prompt | llm | StrOutputParser()).invoke({
-        "existing_answer": current_answer, "context": doc.page_content, "question": test_query
-    })
+    current_answer = (refine_prompt | llm | StrOutputParser()).invoke(
+        {
+            "existing_answer": current_answer,
+            "context": doc.page_content,
+            "question": test_query,
+        }
+    )
 ```
 
 **Compare for query `"How do I fix database timeouts?"`**:
@@ -277,18 +283,10 @@ make m4
 docs = vector_store.similarity_search(query, k=3)
 
 # With category filter
-docs = vector_store.similarity_search(
-    query, 
-    k=3,
-    filter={"category": "Authentication"}
-)
+docs = vector_store.similarity_search(query, k=3, filter={"category": "Authentication"})
 
 # With priority filter
-docs = vector_store.similarity_search(
-    query, 
-    k=3,
-    filter={"priority": "High"}
-)
+docs = vector_store.similarity_search(query, k=3, filter={"priority": "High"})
 ```
 
 **Test query**: "system problem"
@@ -314,7 +312,7 @@ streaming_llm = ChatOpenAI(
     model="gpt-5.6-luna",
     reasoning_effort="none",
     streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()]
+    callbacks=[StreamingStdOutCallbackHandler()],
 )
 
 # Use a detailed prompt so the response is long enough to see streaming in action
@@ -335,7 +333,9 @@ streaming_chain = (
     | StrOutputParser()
 )
 
-query = "What causes database connection issues and how do I troubleshoot and prevent them?"
+query = (
+    "What causes database connection issues and how do I troubleshoot and prevent them?"
+)
 result = streaming_chain.invoke(query)  # Will print token by token!
 ```
 
@@ -370,28 +370,37 @@ chat_history = []
 # Step 1: Query reformulation prompt
 # Rewrites follow-ups into standalone queries using chat history
 # e.g. "How do I fix it?" → "How do I fix authentication failures?"
-condense_prompt = ChatPromptTemplate.from_messages([
-    ("system",
-     "Given the chat history and a follow-up question, rephrase the "
-     "follow-up as a standalone question that includes all necessary "
-     "context from the history. If the question is already standalone, "
-     "return it unchanged."),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
+condense_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Given the chat history and a follow-up question, rephrase the "
+            "follow-up as a standalone question that includes all necessary "
+            "context from the history. If the question is already standalone, "
+            "return it unchanged.",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 
 condense_chain = condense_prompt | llm | StrOutputParser()
 
 # Step 2: Conversational prompt with context and history
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are SupportDesk AI. Answer using ONLY the context below.
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """You are SupportDesk AI. Answer using ONLY the context below.
 Always cite ticket IDs. If the answer isn't in the context, say "I don't have that information."
 
 Context:
-{context}"""),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
+{context}""",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 
 # TODO: Build ask_with_history() so that:
 #   - On the first turn (empty history), skip condensing and retrieve directly
@@ -403,6 +412,7 @@ Context:
 #   standalone = condense_chain.invoke({"question": q, "chat_history": history})
 #   context = format_docs(retriever.invoke(standalone))
 
+
 def ask_with_history(question, history):
     # YOUR CODE HERE:
     # 1. If history is empty, standalone = question
@@ -410,6 +420,7 @@ def ask_with_history(question, history):
     # 3. Retrieve context using standalone
     # 4. Generate answer using conv_prompt with original question
     pass
+
 
 # Test — "How do I fix it?" should remember we were talking about auth failures
 result1 = ask_with_history("What causes authentication failures?", chat_history)

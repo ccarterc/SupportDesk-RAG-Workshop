@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Building the Complete RAG Pipeline Demo
 ================================================
@@ -20,25 +19,31 @@ LEARNING RESOURCES:
 import json
 import os
 import time
-from operator import itemgetter  # Used in exercises/solutions for LCEL key extraction
-# LangChain is a framework for building LLM applications
-# Reference: https://python.langchain.com/docs/get_started/introduction
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI  # OpenAI integrations
-from langchain_chroma import Chroma  # Vector database for similarity search
-from langchain_text_splitters import RecursiveCharacterTextSplitter  # Smart text chunking
-from langchain_core.documents import Document  # Document abstraction
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder  # Prompt templates
-from langchain_core.messages import HumanMessage, AIMessage  # Chat history message types
-from langchain_core.output_parsers import StrOutputParser  # Parse LLM output
-from langchain_core.runnables import RunnablePassthrough  # Pass data through pipeline
 
 # Load environment variables (API keys, model names)
 from dotenv import load_dotenv
+from langchain_chroma import Chroma  # Vector database for similarity search
+from langchain_core.documents import Document  # Document abstraction
+from langchain_core.messages import (  # Chat history message types
+    AIMessage,
+    HumanMessage,
+)
+from langchain_core.output_parsers import StrOutputParser  # Parse LLM output
+from langchain_core.prompts import (  # Prompt templates
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+)
+from langchain_core.runnables import RunnablePassthrough  # Pass data through pipeline
+
+# LangChain is a framework for building LLM applications
+# Reference: https://python.langchain.com/docs/get_started/introduction
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings  # OpenAI integrations
+
 load_dotenv()
 
-print("="*80)
+print("=" * 80)
 print("MODULE 4: RAG PIPELINE")
-print("="*80)
+print("=" * 80)
 print("""
 STRUCTURE:
 
@@ -56,12 +61,12 @@ STRUCTURE:
 # ============================================================================
 # PART 1: Data Ingestion & Vector Store Setup
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 1: Data Ingestion Pipeline")
-print("="*80)
+print("=" * 80)
 
 # Load tickets
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 print(f"✓ Loaded {len(tickets)} support tickets")
 
@@ -73,31 +78,31 @@ for ticket in tickets:
     # Create rich document with all context
     # TIP: Structure your content logically - LLMs understand formatted text better
     content = f"""
-Ticket ID: {ticket['ticket_id']}
-Title: {ticket['title']}
-Category: {ticket['category']}
-Priority: {ticket['priority']}
-Date: {ticket['created_date']} to {ticket['resolved_date']}
+Ticket ID: {ticket["ticket_id"]}
+Title: {ticket["title"]}
+Category: {ticket["category"]}
+Priority: {ticket["priority"]}
+Date: {ticket["created_date"]} to {ticket["resolved_date"]}
 
 Problem Description:
-{ticket['description']}
+{ticket["description"]}
 
 Resolution:
-{ticket['resolution']}
+{ticket["resolution"]}
     """.strip()
-    
+
     # Create Document with metadata
     # Metadata is crucial for filtering, citation, and source tracking
     # Best practice: Include all information you might want to filter or display later
     doc = Document(
         page_content=content,  # The actual text content
         metadata={  # Structured data about the document
-            'ticket_id': ticket['ticket_id'],
-            'title': ticket['title'],
-            'category': ticket['category'],
-            'priority': ticket['priority'],
-            'source': f"Ticket {ticket['ticket_id']}"
-        }
+            "ticket_id": ticket["ticket_id"],
+            "title": ticket["title"],
+            "category": ticket["category"],
+            "priority": ticket["priority"],
+            "source": f"Ticket {ticket['ticket_id']}",
+        },
     )
     documents.append(doc)
 
@@ -108,7 +113,7 @@ print(f"✓ Created {len(documents)} documents with metadata")
 # Reference: https://platform.openai.com/docs/guides/embeddings
 print("\nInitializing OpenAI embedding model...")
 embeddings = OpenAIEmbeddings(
-    model=os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')
+    model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 )
 print("✓ OpenAI embedding model ready")
 
@@ -119,6 +124,7 @@ print("✓ OpenAI embedding model ready")
 print("\nBuilding Chroma vector store...")
 # Always rebuild from scratch so repeated runs don't accumulate duplicate documents.
 import shutil
+
 persist_directory = "./rag_vectorstore"
 if os.path.exists(persist_directory):
     try:
@@ -133,31 +139,33 @@ vector_store = Chroma.from_documents(
     embedding=embeddings,  # Embedding function to use
     collection_name="supportdesk_rag",  # Name for this collection
     persist_directory=persist_directory,  # Where to save the database
-    collection_metadata={"hnsw:space": "cosine"}  # Use cosine distance for similarity search
+    collection_metadata={
+        "hnsw:space": "cosine"
+    },  # Use cosine distance for similarity search
 )
 print("✓ Vector store created and persisted")
 
 # ============================================================================
 # PART 2: Create Retriever
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 2: Setting Up Retriever")
-print("="*80)
+print("=" * 80)
 
 # Create a retriever from the vector store
 # Retrievers are the interface for querying the vector store
 # Reference: https://python.langchain.com/docs/modules/data_connection/retrievers/
 retriever = vector_store.as_retriever(
     search_type="similarity",  # Use cosine similarity for ranking
-    search_kwargs={"k": 3}  # Retrieve top-3 most similar documents
+    search_kwargs={"k": 3},  # Retrieve top-3 most similar documents
     # Other options:
     # - "mmr" (Maximal Marginal Relevance): Balances relevance with diversity
     # - "similarity_score_threshold": Only return docs above a score threshold
 )
 
 print("✓ Retriever configured:")
-print(f"  - Search type: similarity")
-print(f"  - Top-K results: 3")
+print("  - Search type: similarity")
+print("  - Top-K results: 3")
 print("\nTIP: k=3-5 is usually optimal. Too few → missing context, too many → noise")
 
 # Test retriever
@@ -173,9 +181,9 @@ for i, doc in enumerate(retrieved_docs, 1):
 # ============================================================================
 # PART 3: Create Prompt Template with Anti-Hallucination Rules
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 3: Prompt Engineering for RAG")
-print("="*80)
+print("=" * 80)
 
 # Define strict grounding prompt
 # Prompt engineering is CRUCIAL for RAG - it tells the LLM how to use the context
@@ -209,16 +217,16 @@ Helpful Answer (with ticket citations):"""
 PROMPT = ChatPromptTemplate.from_template(prompt_template)
 
 print("✓ Prompt template created with anti-hallucination rules:")
-print("\n" + "-"*80)
+print("\n" + "-" * 80)
 print(prompt_template)
-print("-"*80)
+print("-" * 80)
 
 # ============================================================================
 # PART 4: Initialize LLM
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 4: Initializing Language Model")
-print("="*80)
+print("=" * 80)
 
 # Check if OpenAI key is available
 if os.getenv("OPENAI_API_KEY"):
@@ -226,7 +234,7 @@ if os.getenv("OPENAI_API_KEY"):
     # Initialize ChatOpenAI for generation
     # Reference: https://python.langchain.com/docs/integrations/chat/openai
     llm = ChatOpenAI(
-        model=os.getenv('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
+        model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.6-luna"),
         # NOTE ON temperature: older tutorials (and older versions of this
         # workshop) set temperature=0 here to make RAG answers deterministic.
         # The GPT-5 series removed that knob -- the API rejects any value other
@@ -253,9 +261,10 @@ else:
 # ============================================================================
 # PART 5: Build RAG Chain using LCEL (LangChain Expression Language)
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 5: Assembling RAG Chain")
-print("="*80)
+print("=" * 80)
+
 
 # Helper function to format retrieved documents
 # This concatenates all retrieved document contents into a single context string
@@ -270,6 +279,7 @@ def format_docs(docs):
     """
     # Keep document boundaries explicit so the model can attribute facts by chunk.
     return "\n\n---\n\n".join([doc.page_content for doc in docs])
+
 
 if llm:
     # Build RAG chain using LCEL (LangChain Expression Language)
@@ -300,41 +310,41 @@ else:
 # ============================================================================
 # PART 6: Test the RAG System
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 6: Testing the RAG System")
-print("="*80)
+print("=" * 80)
 
 test_queries = [
     "How do I fix authentication failures after password reset?",
     "What causes database connection timeouts?",
     "Why are emails not being delivered?",
-    "How do I make the perfect pizza?"  # Should refuse to answer!
+    "How do I make the perfect pizza?",  # Should refuse to answer!
 ]
 
 for query in test_queries:
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print(f"QUERY: {query}")
-    print("="*80)
-    
+    print("=" * 80)
+
     # Show retrieved context
     docs = retriever.invoke(query)
     print(f"\nRetrieved {len(docs)} relevant tickets:")
     for i, doc in enumerate(docs, 1):
         print(f"\n  [{i}] {doc.metadata['ticket_id']}: {doc.metadata['title']}")
-    
+
     if qa_chain:
         # Generate answer
         print("\nGenerating answer...")
         result = qa_chain.invoke(query)
-        
-        print("\n" + "-"*80)
+
+        print("\n" + "-" * 80)
         print("ANSWER:")
-        print("-"*80)
+        print("-" * 80)
         print(result)
-        
-        print("\n" + "-"*80)
+
+        print("\n" + "-" * 80)
         print("SOURCE DOCUMENTS:")
-        print("-"*80)
+        print("-" * 80)
         for i, doc in enumerate(docs, 1):
             print(f"{i}. {doc.metadata['source']}")
     else:
@@ -343,25 +353,26 @@ for query in test_queries:
 # ============================================================================
 # PART 7: Validation & Fallback
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 7: Enhanced RAG with Answer Validation")
-print("="*80)
+print("=" * 80)
+
 
 def rag_with_validation(query, retriever, llm, min_similarity_score=0.5):
     """
-        RAG pipeline with additional validation and fallback.
+    RAG pipeline with additional validation and fallback.
 
-        Validation rule in this demo:
-        - Use relevance score as a confidence proxy.
-        - If the best document's relevance score is too low (< threshold),
-            return a safe fallback instead of forcing an answer.
+    Validation rule in this demo:
+    - Use relevance score as a confidence proxy.
+    - If the best document's relevance score is too low (< threshold),
+        return a safe fallback instead of forcing an answer.
 
-        Note:
-        - similarity_search_with_relevance_scores() returns scores in [0, 1].
-        - Higher = more similar (derived from cosine similarity).
-        - This keeps things consistent with the cosine similarity concept
-          taught in earlier modules (cosine similarity: -1 to 1).
-        - This is a simple, practical guardrail for anti-hallucination behavior.
+    Note:
+    - similarity_search_with_relevance_scores() returns scores in [0, 1].
+    - Higher = more similar (derived from cosine similarity).
+    - This keeps things consistent with the cosine similarity concept
+      taught in earlier modules (cosine similarity: -1 to 1).
+    - This is a simple, practical guardrail for anti-hallucination behavior.
     """
     # Retrieve documents with relevance scores (0 = least relevant, 1 = most relevant)
     # Uses similarity_search_with_relevance_scores instead of similarity_search_with_score
@@ -370,7 +381,7 @@ def rag_with_validation(query, retriever, llm, min_similarity_score=0.5):
     docs_with_scores = vector_store.similarity_search_with_relevance_scores(query, k=3)
 
     print(f"\nQuery: {query}")
-    print(f"\nRelevance scores (cosine similarity: 0=no match, 1=identical):")
+    print("\nRelevance scores (cosine similarity: 0=no match, 1=identical):")
     for doc, score in docs_with_scores:
         print(f"  - {doc.metadata['ticket_id']}: {score:.4f}")
 
@@ -380,15 +391,17 @@ def rag_with_validation(query, retriever, llm, min_similarity_score=0.5):
 
     # Relevance score: higher = more similar. Below 0.5 means the match is too weak to answer.
     if best_score < min_similarity_score:
-        print(f"\n⚠ Best match relevance ({best_score:.4f}) is below threshold ({min_similarity_score}) — too dissimilar to answer confidently")
+        print(
+            f"\n⚠ Best match relevance ({best_score:.4f}) is below threshold ({min_similarity_score}) — too dissimilar to answer confidently"
+        )
         return "I don't have enough relevant information in the ticket history to answer that question confidently."
-    
+
     # If we pass the confidence gate, build context and ask the model normally.
     docs = [doc for doc, score in docs_with_scores]
     context = "\n\n---\n\n".join([doc.page_content for doc in docs])
-    
-    prompt = f"""{prompt_template.replace('{context}', context).replace('{question}', query)}"""
-    
+
+    prompt = f"""{prompt_template.replace("{context}", context).replace("{question}", query)}"""
+
     if llm:
         # Use chat-model invocation directly and normalize return type to string.
         # `ChatOpenAI.invoke(...)` returns an AIMessage object in modern LangChain.
@@ -397,29 +410,24 @@ def rag_with_validation(query, retriever, llm, min_similarity_score=0.5):
     else:
         return "(LLM not configured)"
 
+
 print("\nTesting validation logic:")
 print("\n1. Relevant query (should answer):")
 rag_with_validation(
-    "How to fix database connection timeouts?",
-    retriever,
-    llm,
-    min_similarity_score=0.5
+    "How to fix database connection timeouts?", retriever, llm, min_similarity_score=0.5
 )
 
 print("\n2. Irrelevant query (should refuse):")
 rag_with_validation(
-    "What is the capital of France?",
-    retriever,
-    llm,
-    min_similarity_score=0.5
+    "What is the capital of France?", retriever, llm, min_similarity_score=0.5
 )
 
 # ============================================================================
 # PART 8: Conversation with History (Multi-Turn RAG)
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 8: Conversation with History (Multi-Turn RAG)")
-print("="*80)
+print("=" * 80)
 print("""
 Problem with single-turn RAG:
   Turn 1: "How do I fix authentication failures?"  → good answer
@@ -438,37 +446,48 @@ if llm:
     # The retriever only sees the raw question string.
     # "What was the resolution for that ticket?" → retriever gets vague query.
     # Fix: Use the LLM to rewrite follow-ups into standalone queries first.
-    condense_prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "Given the chat history and a follow-up question, rephrase the "
-         "follow-up as a standalone question that includes all necessary "
-         "context from the history. If the question is already standalone, "
-         "return it unchanged."),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{question}"),
-    ])
+    condense_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                (
+                    "Given the chat history and a follow-up question, rephrase the "
+                    "follow-up as a standalone question that includes all necessary "
+                    "context from the history. If the question is already standalone, "
+                    "return it unchanged."
+                ),
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{question}"),
+        ]
+    )
 
     # Chain that rewrites the question: dict → standalone question string
     condense_chain = condense_prompt | llm | StrOutputParser()
 
     # ── Step 2: Conversation-aware prompt ──────────────────────────────
     # MessagesPlaceholder expands the history list into the prompt at call time
-    conv_prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are SupportDesk AI. Answer using the ticket context below and the chat history.
+    conv_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """You are SupportDesk AI. Answer using the ticket context below and the chat history.
     Use chat history to resolve references like "that issue" or "that ticket".
     For factual claims, prioritize the retrieved context.
     If information is not available in context or history, say "I don't have that information."
     Always cite ticket IDs when available.
 
 Context:
-{context}"""),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{question}"),
-    ])
+{context}""",
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{question}"),
+        ]
+    )
 
     def ask_with_history(question, history):
         """Ask a question with query reformulation and history tracking.
-        
+
         On the first turn (empty history), skip the condense step and send
         the question directly to the retriever. On follow-up turns, rewrite
         the question into a standalone query so the retriever finds the
@@ -479,19 +498,21 @@ Context:
             standalone = question
         else:
             # Follow-up turn: rewrite using history context
-            # e.g. "What was the resolution for that ticket?" → 
+            # e.g. "What was the resolution for that ticket?" →
             #      "What was the resolution for ticket TICK-001?"
-            standalone = condense_chain.invoke({
-                "question": question, "chat_history": history
-            })
+            standalone = condense_chain.invoke(
+                {"question": question, "chat_history": history}
+            )
 
         # Retrieve docs using the standalone query and generate the answer
         context = format_docs(retriever.invoke(standalone))
-        answer = (conv_prompt | llm | StrOutputParser()).invoke({
-            "context": context,
-            "chat_history": history,
-            "question": question,  # Original question, not the rewritten one
-        })
+        answer = (conv_prompt | llm | StrOutputParser()).invoke(
+            {
+                "context": context,
+                "chat_history": history,
+                "question": question,  # Original question, not the rewritten one
+            }
+        )
 
         history.append(HumanMessage(content=question))
         history.append(AIMessage(content=answer))
@@ -519,7 +540,9 @@ Context:
     print(f"         Assistant: {a3[:300]}{'...' if len(a3) > 300 else ''}")
     print(f"         [chat_history now has {len(history)} messages]")
 
-    print(f"\n✓ History contains {len(history)} messages ({len(history)//2} complete turns)")
+    print(
+        f"\n✓ History contains {len(history)} messages ({len(history) // 2} complete turns)"
+    )
     print("TIP: In production, cap history to avoid token bloat:")
     print("       history = history[-6:]  # keep last 3 turns")
 
@@ -530,11 +553,15 @@ else:
     print()
     print("  # Step 1: Rewrite follow-up into standalone query (skip if no history)")
     print("  if history:")
-    print("      standalone = condense_chain.invoke({'question': q, 'chat_history': history})")
+    print(
+        "      standalone = condense_chain.invoke({'question': q, 'chat_history': history})"
+    )
     print("  else:")
     print("      standalone = q")
     print()
-    print("  # Step 2: Retrieve using standalone query, generate with original question")
+    print(
+        "  # Step 2: Retrieve using standalone query, generate with original question"
+    )
     print("  context = format_docs(retriever.invoke(standalone))")
     print("  answer = (conv_prompt | llm | StrOutputParser()).invoke({")
     print("      'context': context, 'chat_history': history, 'question': q")
@@ -549,15 +576,15 @@ else:
 # ============================================================================
 # PART 9: Interactive Demo
 # ============================================================================
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PART 9: Interactive SupportDesk Assistant")
-print("="*80)
+print("=" * 80)
 
 if qa_chain:
     print("\nSupportDesk RAG Assistant Ready!")
     print("Ask questions about support ticket history.")
     print("Type 'quit' to exit.\n")
-    
+
     while True:
         try:
             user_query = input("You: ").strip()
@@ -567,17 +594,17 @@ if qa_chain:
             print("\n(no input stream -- skipping interactive mode)")
             break
 
-        if user_query.lower() in ['quit', 'exit', 'q']:
+        if user_query.lower() in ["quit", "exit", "q"]:
             print("Goodbye!")
             break
-        
+
         if not user_query:
             continue
-        
+
         print("\nAssistant: ", end="")
         answer = qa_chain.invoke(user_query)
         print(answer)
-        
+
         docs = retriever.invoke(user_query)
         print(f"\n📎 Sources: {', '.join([doc.metadata['ticket_id'] for doc in docs])}")
         print()
@@ -585,9 +612,9 @@ else:
     print("\n⚠ Interactive mode requires OpenAI API key")
     print("Set OPENAI_API_KEY to try the interactive assistant!")
 
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("DEMO COMPLETE!")
-print("="*80)
+print("=" * 80)
 print("\nKey Takeaways:")
 print("1. RAG pipeline: Retrieve → Inject Context → Generate")
 print("2. Strict prompt engineering prevents hallucinations")

@@ -61,8 +61,8 @@ def calculate_metrics(retrieved_ids, relevant_ids, k=3):
 
 **Test with**:
 ```python
-retrieved = ['TICK-001', 'TICK-002', 'TICK-003']
-relevant = ['TICK-001', 'TICK-003']
+retrieved = ["TICK-001", "TICK-002", "TICK-003"]
+relevant = ["TICK-001", "TICK-003"]
 # Expected: precision=0.67, recall=1.0, f1=0.80
 ```
 
@@ -82,15 +82,15 @@ make run FILE=modules/5_evaluation/scratch.py
 ```python
 all_metrics = []
 for query in eval_queries:
-    docs = vector_store.similarity_search(query['question'], k=3)
-    retrieved = [doc.metadata['ticket_id'] for doc in docs]
-    metrics = calculate_metrics(retrieved, query['relevant_ticket_ids'])
+    docs = vector_store.similarity_search(query["question"], k=3)
+    retrieved = [doc.metadata["ticket_id"] for doc in docs]
+    metrics = calculate_metrics(retrieved, query["relevant_ticket_ids"])
     all_metrics.append(metrics)
 
 # Compute averages
-avg_precision = np.mean([m['precision'] for m in all_metrics])
-avg_recall = np.mean([m['recall'] for m in all_metrics])
-avg_f1 = np.mean([m['f1'] for m in all_metrics])
+avg_precision = np.mean([m["precision"] for m in all_metrics])
+avg_recall = np.mean([m["recall"] for m in all_metrics])
+avg_f1 = np.mean([m["f1"] for m in all_metrics])
 
 print(f"Precision@3: {avg_precision:.4f}")
 print(f"Recall@3:    {avg_recall:.4f}")
@@ -117,13 +117,15 @@ make m5
 for k in [1, 3, 5, 10]:
     metrics = []
     for query in eval_queries:
-        docs = vector_store.similarity_search(query['question'], k=k)
-        retrieved = [doc.metadata['ticket_id'] for doc in docs]
-        m = calculate_metrics(retrieved, query['relevant_ticket_ids'], k=k)
+        docs = vector_store.similarity_search(query["question"], k=k)
+        retrieved = [doc.metadata["ticket_id"] for doc in docs]
+        m = calculate_metrics(retrieved, query["relevant_ticket_ids"], k=k)
         metrics.append(m)
-    
-    print(f"k={k}: Precision={np.mean([m['precision'] for m in metrics]):.2f}, "
-          f"Recall={np.mean([m['recall'] for m in metrics]):.2f}")
+
+    print(
+        f"k={k}: Precision={np.mean([m['precision'] for m in metrics]):.2f}, "
+        f"Recall={np.mean([m['recall'] for m in metrics]):.2f}"
+    )
 ```
 
 **Questions**:
@@ -149,7 +151,7 @@ make m5
 def evaluate_groundedness(answer, context_docs):
     """Check if answer is supported by context"""
     context = "\n\n".join([doc.page_content for doc in context_docs])
-    
+
     prompt = f"""Evaluate if the ANSWER is fully supported by the CONTEXT.
 
 CONTEXT:
@@ -166,11 +168,11 @@ Rate groundedness (0-10):
 Format: Score: X / Reason: <explanation>"""
 
     response = openai_client.chat.completions.create(
-        model='gpt-5.6-luna',
+        model="gpt-5.6-luna",
         messages=[{"role": "user", "content": prompt}],
-        reasoning_effort="none"
+        reasoning_effort="none",
     )
-    
+
     return response.choices[0].message.content
 ```
 
@@ -204,11 +206,11 @@ Rate completeness (0-10):
 Format: Score: X / Reason: <explanation>"""
 
     response = openai_client.chat.completions.create(
-        model='gpt-5.6-luna',
+        model="gpt-5.6-luna",
         messages=[{"role": "user", "content": prompt}],
-        reasoning_effort="none"
+        reasoning_effort="none",
     )
-    
+
     return response.choices[0].message.content
 ```
 
@@ -227,34 +229,37 @@ make m5
 ```python
 from collections import defaultdict
 
+
 def analyze_failures(eval_queries, vector_store, threshold=0.5):
     """Find queries with Precision < threshold"""
     failures = []
-    
+
     for query in eval_queries:
-        docs = vector_store.similarity_search(query['question'], k=3)
-        retrieved = [doc.metadata['ticket_id'] for doc in docs]
-        metrics = calculate_metrics(retrieved, query['relevant_ticket_ids'])
-        
+        docs = vector_store.similarity_search(query["question"], k=3)
+        retrieved = [doc.metadata["ticket_id"] for doc in docs]
+        metrics = calculate_metrics(retrieved, query["relevant_ticket_ids"])
+
         # TODO 1: keep only low-precision queries
-        if metrics['precision'] < threshold:
-            failures.append({
-                'query': query['question'],
-                'precision': metrics['precision'],
-                'retrieved': retrieved,
-                'expected': query['relevant_ticket_ids'],
-                'category': query.get('category', 'Unknown')
-            })
-    
+        if metrics["precision"] < threshold:
+            failures.append(
+                {
+                    "query": query["question"],
+                    "precision": metrics["precision"],
+                    "retrieved": retrieved,
+                    "expected": query["relevant_ticket_ids"],
+                    "category": query.get("category", "Unknown"),
+                }
+            )
+
     # TODO 2: group failures by category
     by_category = defaultdict(list)
     for f in failures:
-        by_category[f['category']].append(f)
-    
+        by_category[f["category"]].append(f)
+
     print(f"Found {len(failures)} failures")
     for category, items in by_category.items():
         print(f"  {category}: {len(items)} failures")
-    
+
     return failures
 ```
 
@@ -278,33 +283,35 @@ make m5
 ```python
 import time
 
+
 class RAGMetrics:
     def __init__(self):
         self.query_times = []
         self.token_counts = []
-    
+
     def track_query(self, query, result, elapsed_time):
         self.query_times.append(elapsed_time)
         tokens = len(result) / 4  # Rough estimate
         self.token_counts.append(tokens)
-    
+
     def report(self):
         print(f"Total queries: {len(self.query_times)}")
         print(f"Avg latency: {np.mean(self.query_times):.3f}s")
         print(f"p95 latency: {np.percentile(self.query_times, 95):.3f}s")
-        
+
         total_tokens = sum(self.token_counts)
         cost = (total_tokens / 1000) * 0.002  # GPT-4o-mini estimate
         print(f"Est. cost: ${cost:.4f}")
+
 
 # Usage (no refactor needed — just run and inspect)
 metrics = RAGMetrics()
 for query in eval_queries[:10]:
     start = time.time()
-    result = generate_answer(query['question'])
+    result = generate_answer(query["question"])
     elapsed = time.time() - start
-    
-    metrics.track_query(query['question'], result['answer'], elapsed)
+
+    metrics.track_query(query["question"], result["answer"], elapsed)
 
 metrics.report()
 ```
@@ -349,13 +356,31 @@ def get_release_decision(metrics: dict) -> tuple:
 **Test with these scenarios:**
 ```python
 # Should return PASS
-good = {'precision': 0.85, 'recall': 0.75, 'f1': 0.80, 'groundedness': 0.90, 'completeness': 0.80}
+good = {
+    "precision": 0.85,
+    "recall": 0.75,
+    "f1": 0.80,
+    "groundedness": 0.90,
+    "completeness": 0.80,
+}
 
 # Should return REVIEW (recall in yellow zone)
-borderline = {'precision': 0.85, 'recall': 0.65, 'f1': 0.74, 'groundedness': 0.86, 'completeness': 0.78}
+borderline = {
+    "precision": 0.85,
+    "recall": 0.65,
+    "f1": 0.74,
+    "groundedness": 0.86,
+    "completeness": 0.78,
+}
 
 # Should return BLOCK (groundedness in red zone)
-bad = {'precision': 0.82, 'recall': 0.71, 'f1': 0.76, 'groundedness': 0.60, 'completeness': 0.70}
+bad = {
+    "precision": 0.82,
+    "recall": 0.71,
+    "f1": 0.76,
+    "groundedness": 0.60,
+    "completeness": 0.70,
+}
 
 decision, flags = get_release_decision(good)
 print(f"Good system:      {decision} {flags}")
@@ -398,19 +423,19 @@ def evaluation_report(eval_queries, vector_store, generate_fn):
     """Generate comprehensive evaluation report"""
     retrieval_scores = []
     generation_scores = []
-    
+
     for query in eval_queries[:5]:  # Limit for demo
         # Retrieval metrics
-        docs = vector_store.similarity_search(query['question'], k=3)
-        retrieved = [doc.metadata['ticket_id'] for doc in docs]
-        r_metrics = calculate_metrics(retrieved, query['relevant_ticket_ids'])
+        docs = vector_store.similarity_search(query["question"], k=3)
+        retrieved = [doc.metadata["ticket_id"] for doc in docs]
+        r_metrics = calculate_metrics(retrieved, query["relevant_ticket_ids"])
         retrieval_scores.append(r_metrics)
-        
+
         # Generation metrics
-        result = generate_fn(query['question'])
-        groundedness = evaluate_groundedness(result['answer'], docs)
+        result = generate_fn(query["question"])
+        groundedness = evaluate_groundedness(result["answer"], docs)
         generation_scores.append(groundedness)
-    
+
     print("=" * 60)
     print("RAG SYSTEM EVALUATION REPORT")
     print("=" * 60)

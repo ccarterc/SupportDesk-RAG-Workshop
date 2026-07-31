@@ -51,10 +51,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 chain = (
-    {
-        "context": retriever | format_docs,
-        "question": RunnablePassthrough()
-    }
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
     | llm
     | StrOutputParser()
@@ -107,18 +104,23 @@ The conversational prompt is different from the simple one in two important ways
 ```python
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are SupportDesk AI. Answer using the ticket context below and the chat history.
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """You are SupportDesk AI. Answer using the ticket context below and the chat history.
 Use chat history to resolve references like "that issue" or "that ticket".
 For factual claims, prioritize the retrieved context.
 If information is not available in context or history, say "I don't have that information."
 Always cite ticket IDs when available.
 
 Context:
-{context}"""),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
+{context}""",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 ```
 
 Compare the two prompt styles:
@@ -138,9 +140,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 conv_chain = (
-    RunnablePassthrough.assign(
-        context=itemgetter("question") | retriever | format_docs
-    )
+    RunnablePassthrough.assign(context=itemgetter("question") | retriever | format_docs)
     | conv_prompt
     | llm
     | StrOutputParser()
@@ -151,6 +151,7 @@ conv_chain = (
 
 ```python
 from langchain_core.messages import HumanMessage, AIMessage
+
 
 def ask_with_history(question, history):
     """Ask a question and automatically append the turn to history."""
@@ -192,8 +193,8 @@ In the simple chain the input is a single string. The prompt needs **two** keys:
 
 ```python
 {
-    "context": retriever | format_docs,   # transforms the string into context
-    "question": RunnablePassthrough()     # keeps the original string untouched
+    "context": retriever | format_docs,  # transforms the string into context
+    "question": RunnablePassthrough(),  # keeps the original string untouched
 }
 ```
 
@@ -206,9 +207,7 @@ Without it, the prompt would receive `context` but not the raw `question`.
 When the input is already a dict (`{"question": ..., "chat_history": ...}`), we do **not** want to throw away `chat_history`. `.assign()` merges a new key into the existing dict:
 
 ```python
-RunnablePassthrough.assign(
-    context=itemgetter("question") | retriever | format_docs
-)
+RunnablePassthrough.assign(context=itemgetter("question") | retriever | format_docs)
 ```
 
 Step by step:
@@ -248,10 +247,10 @@ Here is the key insight: **every** building block in the chains above — the re
 That interface guarantees four methods:
 
 ```python
-component.invoke(input)       # single input  → single output
-component.batch([inp1, inp2]) # list of inputs → list of outputs
-component.stream(input)       # single input  → output token by token
-component.ainvoke(input)      # async version of invoke
+component.invoke(input)  # single input  → single output
+component.batch([inp1, inp2])  # list of inputs → list of outputs
+component.stream(input)  # single input  → output token by token
+component.ainvoke(input)  # async version of invoke
 ```
 
 This is why the `|` pipe works — every component speaks the same protocol. LangChain just calls `.invoke()` on the left piece, takes the output, and feeds it as input to `.invoke()` on the right piece.
@@ -267,7 +266,9 @@ docs = retriever.invoke("auth failures after reset")
 context_str = format_docs(docs)
 # -> "[SOURCE 1: TICK-001]\nUsers cannot log in after..."
 
-prompt_value = prompt.invoke({"context": context_str, "question": "How do I fix auth failures?"})
+prompt_value = prompt.invoke(
+    {"context": context_str, "question": "How do I fix auth failures?"}
+)
 # -> ChatPromptValue(messages=[SystemMessage(...), HumanMessage(...)])
 
 ai_msg = llm.invoke(prompt_value)
@@ -317,7 +318,11 @@ from langchain_core.documents import Document
 
 doc = Document(
     page_content="Users cannot log in after password reset. Resolution: clear sessions.",
-    metadata={"ticket_id": "TICK-001", "category": "authentication", "priority": "high"}
+    metadata={
+        "ticket_id": "TICK-001",
+        "category": "authentication",
+        "priority": "high",
+    },
 )
 ```
 
@@ -370,7 +375,7 @@ vector_store = Chroma.from_documents(
     embedding=embeddings,
     collection_name="supportdesk_rag",
     persist_directory="./vectorstore",
-    collection_metadata={"hnsw:space": "cosine"}
+    collection_metadata={"hnsw:space": "cosine"},
 )
 ```
 
@@ -383,10 +388,7 @@ Note:
 ### 6.5 `.as_retriever()` — chain-friendly retrieval interface
 
 ```python
-retriever = vector_store.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 3}
-)
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 ```
 
 Now you can use `retriever.invoke(question)` and get `List[Document]`.
@@ -443,11 +445,13 @@ prompt = ChatPromptTemplate.from_template(prompt_template)
 **`from_messages(list)`** — list of role-tagged messages. Required when you need separate system / human roles or chat history.
 
 ```python
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", "...rules + {context}..."),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "...rules + {context}..."),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 # Full version shown in Section 2.1
 ```
 
@@ -488,13 +492,13 @@ parser = StrOutputParser()
 
 # What the LLM actually returns:
 ai_msg = AIMessage(content="Clear sessions and force re-auth (TICK-001).")
-print(type(ai_msg))      # <class 'langchain_core.messages.ai.AIMessage'>
-print(ai_msg.content)    # "Clear sessions and force re-auth (TICK-001)."
+print(type(ai_msg))  # <class 'langchain_core.messages.ai.AIMessage'>
+print(ai_msg.content)  # "Clear sessions and force re-auth (TICK-001)."
 
 # What the parser does — pulls out .content as a plain str:
 answer = parser.invoke(ai_msg)
-print(type(answer))      # <class 'str'>
-print(answer)            # "Clear sessions and force re-auth (TICK-001)."
+print(type(answer))  # <class 'str'>
+print(answer)  # "Clear sessions and force re-auth (TICK-001)."
 ```
 
 Without the parser, your chain would return an `AIMessage` object instead of a string — which breaks downstream code that expects `str`.
@@ -507,11 +511,13 @@ Use this when you need the model to return a predictable structure (e.g., answer
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
+
 # Step 1: Define the schema you want
 class TicketAnswer(BaseModel):
     answer: str = Field(description="The answer to the user's question")
     confidence: int = Field(description="Confidence score 0-100")
     sources: list[str] = Field(description="List of ticket IDs used")
+
 
 # Step 2: Create the parser
 json_parser = JsonOutputParser(pydantic_object=TicketAnswer)
@@ -528,21 +534,26 @@ The key: inject `format_instructions` into your prompt so the model knows what J
 ```python
 from langchain_core.prompts import ChatPromptTemplate
 
-json_prompt = ChatPromptTemplate.from_messages([
-    ("system", """Answer using ONLY the context. Cite sources.
+json_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """Answer using ONLY the context. Cite sources.
 
 Context:
 {context}
 
-{format_instructions}"""),
-    ("human", "{question}")
-])
+{format_instructions}""",
+        ),
+        ("human", "{question}"),
+    ]
+)
 
 json_chain = (
     {
         "context": retriever | format_docs,
         "question": RunnablePassthrough(),
-        "format_instructions": lambda _: json_parser.get_format_instructions()
+        "format_instructions": lambda _: json_parser.get_format_instructions(),
     }
     | json_prompt
     | llm
@@ -580,14 +591,16 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 
 store = {}
 
+
 def get_history(session_id: str):
     return store.setdefault(session_id, InMemoryChatMessageHistory())
+
 
 chain_with_history = RunnableWithMessageHistory(
     conv_chain,
     get_history,
     input_messages_key="question",
-    history_messages_key="chat_history"
+    history_messages_key="chat_history",
 )
 ```
 

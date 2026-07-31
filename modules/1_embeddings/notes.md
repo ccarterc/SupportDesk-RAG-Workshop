@@ -45,17 +45,13 @@ client = OpenAI(api_key="your-api-key")
 
 # Single text
 response = client.embeddings.create(
-    model="text-embedding-3-small",
-    input="How do I reset my password?"
+    model="text-embedding-3-small", input="How do I reset my password?"
 )
 embedding = response.data[0].embedding  # List of 1536 floats
 
 # Batch processing (more efficient)
 texts = ["text 1", "text 2", "text 3"]
-response = client.embeddings.create(
-    model="text-embedding-3-small",
-    input=texts
-)
+response = client.embeddings.create(model="text-embedding-3-small", input=texts)
 embeddings = [item.embedding for item in response.data]
 ```
 
@@ -78,6 +74,7 @@ cosine_similarity(A, B) = (A · B) / (||A|| × ||B||)
 **Python Implementation:**
 ```python
 import numpy as np
+
 
 def cosine_similarity(vec1, vec2):
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
@@ -140,21 +137,19 @@ for i in range(0, len(texts), batch_size):
 import hashlib
 import json
 
+
 def get_or_create_embedding(text, cache={}):
     # Create hash of text
     text_hash = hashlib.md5(text.encode()).hexdigest()
-    
+
     # Check cache
     if text_hash in cache:
         return cache[text_hash]
-    
+
     # Generate embedding
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=text
-    )
+    response = client.embeddings.create(model="text-embedding-3-small", input=text)
     embedding = response.data[0].embedding
-    
+
     # Store in cache
     cache[text_hash] = embedding
     return embedding
@@ -179,11 +174,11 @@ similarity_matrix = cosine_similarity(embeddings)
 
 # Create heatmap
 plt.figure(figsize=(10, 8))
-plt.imshow(similarity_matrix, cmap='RdYlGn', vmin=0, vmax=1)
-plt.colorbar(label='Cosine Similarity')
-plt.title('Document Similarity Matrix')
-plt.xlabel('Document Index')
-plt.ylabel('Document Index')
+plt.imshow(similarity_matrix, cmap="RdYlGn", vmin=0, vmax=1)
+plt.colorbar(label="Cosine Similarity")
+plt.title("Document Similarity Matrix")
+plt.xlabel("Document Index")
+plt.ylabel("Document Index")
 plt.show()
 ```
 
@@ -217,7 +212,7 @@ embedding = get_embedding(long_doc)  # API error!
 ### 3. Over-Embedding
 ❌ **Wrong**: Embed every sentence separately
 ```python
-for sentence in document.split('.'):
+for sentence in document.split("."):
     embeddings.append(get_embedding(sentence))  # Expensive!
 ```
 
@@ -227,12 +222,10 @@ for sentence in document.split('.'):
 ```python
 from tenacity import retry, wait_exponential, stop_after_attempt
 
+
 @retry(wait=wait_exponential(min=1, max=60), stop=stop_after_attempt(3))
 def get_embedding_with_retry(text):
-    return client.embeddings.create(
-        model="text-embedding-3-small",
-        input=text
-    )
+    return client.embeddings.create(model="text-embedding-3-small", input=text)
 ```
 
 ## Real-World Applications
@@ -242,16 +235,15 @@ def get_embedding_with_retry(text):
 def semantic_search(query, documents, top_k=5):
     # Embed query
     query_embedding = get_embedding(query)
-    
+
     # Get document embeddings
     doc_embeddings = [get_embedding(doc) for doc in documents]
-    
+
     # Calculate similarities
     similarities = [
-        cosine_similarity(query_embedding, doc_emb)
-        for doc_emb in doc_embeddings
+        cosine_similarity(query_embedding, doc_emb) for doc_emb in doc_embeddings
     ]
-    
+
     # Get top K results
     top_indices = np.argsort(similarities)[-top_k:][::-1]
     return [documents[i] for i in top_indices]
@@ -271,13 +263,10 @@ clusters = kmeans.fit_predict(embeddings)
 def find_outliers(embeddings, threshold=0.3):
     # Calculate centroid
     centroid = np.mean(embeddings, axis=0)
-    
+
     # Find documents far from center
-    distances = [
-        cosine_similarity(emb, centroid)
-        for emb in embeddings
-    ]
-    
+    distances = [cosine_similarity(emb, centroid) for emb in embeddings]
+
     outliers = [i for i, d in enumerate(distances) if d < threshold]
     return outliers
 ```
@@ -292,7 +281,7 @@ def find_outliers(embeddings, threshold=0.3):
 response = client.embeddings.create(
     model="text-embedding-3-small",
     input=text,
-    dimensions=512  # Reduce storage by 66%
+    dimensions=512,  # Reduce storage by 66%
 )
 ```
 
@@ -300,13 +289,14 @@ response = client.embeddings.create(
 ```python
 import tiktoken
 
+
 def estimate_embedding_cost(texts, model="text-embedding-3-small"):
     encoding = tiktoken.get_encoding("cl100k_base")
     total_tokens = sum(len(encoding.encode(text)) for text in texts)
-    
+
     cost_per_million = 0.02  # text-embedding-3-small
     cost = (total_tokens / 1_000_000) * cost_per_million
-    
+
     print(f"Total tokens: {total_tokens:,}")
     print(f"Estimated cost: ${cost:.4f}")
     return cost
@@ -318,14 +308,15 @@ def estimate_embedding_cost(texts, model="text-embedding-3-small"):
 ```python
 from concurrent.futures import ThreadPoolExecutor
 
+
 def batch_embed_parallel(texts, batch_size=100):
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = []
         for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
+            batch = texts[i : i + batch_size]
             future = executor.submit(get_embedding, batch)
             futures.append(future)
-        
+
         return [f.result() for f in futures]
 ```
 
@@ -333,6 +324,7 @@ def batch_embed_parallel(texts, batch_size=100):
 ```python
 import asyncio
 from openai import AsyncOpenAI
+
 
 async def embed_async(texts):
     client = AsyncOpenAI()

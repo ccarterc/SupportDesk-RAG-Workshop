@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Module 4 Solutions: RAG Pipeline
 ================================
@@ -7,14 +6,14 @@ Solutions for all exercises in exercises.md
 """
 
 import json
-import os
+
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 load_dotenv()
 
@@ -22,32 +21,32 @@ load_dotenv()
 # Setup: Load data and create vector store
 # ============================================================================
 print("Loading data...")
-with open('../../data/synthetic_tickets.json', 'r') as f:
+with open("../../data/synthetic_tickets.json", "r") as f:
     tickets = json.load(f)
 
 documents = []
 for ticket in tickets:
     content = f"""
-Ticket ID: {ticket['ticket_id']}
-Title: {ticket['title']}
-Category: {ticket['category']}
-Priority: {ticket['priority']}
+Ticket ID: {ticket["ticket_id"]}
+Title: {ticket["title"]}
+Category: {ticket["category"]}
+Priority: {ticket["priority"]}
 
 Problem Description:
-{ticket['description']}
+{ticket["description"]}
 
 Resolution:
-{ticket['resolution']}
+{ticket["resolution"]}
     """.strip()
-    
+
     doc = Document(
         page_content=content,
         metadata={
-            'ticket_id': ticket['ticket_id'],
-            'title': ticket['title'],
-            'category': ticket['category'],
-            'priority': ticket['priority']
-        }
+            "ticket_id": ticket["ticket_id"],
+            "title": ticket["title"],
+            "category": ticket["category"],
+            "priority": ticket["priority"],
+        },
     )
     documents.append(doc)
 
@@ -55,18 +54,21 @@ print(f"✓ Loaded {len(documents)} documents")
 
 # Create vector store
 print("Building vector store...")
-embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 vector_store = Chroma.from_documents(
     documents=documents,
     embedding=embeddings,
     collection_name="solutions_test",
-    collection_metadata={"hnsw:space": "cosine"}
+    collection_metadata={"hnsw:space": "cosine"},
 )
 print("✓ Vector store ready")
 
 # Create retriever and LLM
 retriever = vector_store.as_retriever(search_kwargs={"k": 3})
-llm = ChatOpenAI(model='gpt-5.6-luna', reasoning_effort="none", timeout=120, max_retries=3)
+llm = ChatOpenAI(
+    model="gpt-5.6-luna", reasoning_effort="none", timeout=120, max_retries=3
+)
+
 
 def format_docs(docs):
     """
@@ -119,7 +121,11 @@ Question: {question}
 
 Answer (bullet points with sources):"""
 
-templates = [("Concise", template_a), ("Step-by-step", template_b), ("Bullet points", template_c)]
+templates = [
+    ("Concise", template_a),
+    ("Step-by-step", template_b),
+    ("Bullet points", template_c),
+]
 test_query = "How do I fix authentication issues?"
 
 for name, template in templates:
@@ -130,7 +136,7 @@ for name, template in templates:
         | llm
         | StrOutputParser()
     )
-    
+
     print(f"\n{name} template:")
     response = chain.invoke(test_query)
     print(f"  {response[:200]}...")
@@ -202,13 +208,13 @@ for k in [1, 3, 5, 10]:
 #   - MMR: broad query, want coverage across subtopics ("database issues")
 print("\n\nMMR search (diverse results):")
 retriever_mmr = vector_store.as_retriever(
-    search_type="mmr",              # Use MMR instead of plain cosine similarity
+    search_type="mmr",  # Use MMR instead of plain cosine similarity
     search_kwargs={
-        "k": 3,                     # Final number of documents to return
-        "fetch_k": 10,              # Candidate pool size (fetched via similarity first)
+        "k": 3,  # Final number of documents to return
+        "fetch_k": 10,  # Candidate pool size (fetched via similarity first)
         # "lambda_mult": 0.5,       # Trade-off: 1.0 = pure relevance, 0.0 = pure diversity
         #                           # Default 0.5 balances both equally.
-    }
+    },
 )
 # fetch_k > k is required — MMR needs a larger candidate pool to select diverse items from.
 docs_mmr = retriever_mmr.invoke(test_query)
@@ -256,6 +262,7 @@ print("\n" + "=" * 80)
 print("EXERCISE 4: Build a Fallback System")
 print("=" * 80)
 
+
 def smart_rag(query, vector_store, llm, min_score_threshold=0.7):
     """
     RAG with confidence-based fallbacks.
@@ -269,21 +276,21 @@ def smart_rag(query, vector_store, llm, min_score_threshold=0.7):
     """
     # Retrieve candidate evidence + numeric distances from the vector store.
     docs_with_scores = vector_store.similarity_search_with_score(query, k=3)
-    
+
     if not docs_with_scores:
         return "No relevant tickets found.", "no_results"
-    
+
     # Lower distance = better match (cosine distance: 0=identical, 1=orthogonal).
     # We use the top distance as a lightweight proxy for answer reliability.
     best_distance = docs_with_scores[0][1]
-    
+
     print(f"  Best match distance: {best_distance:.4f}")
-    
+
     if best_distance < 0.5:  # Very relevant
         # High-confidence path: construct full grounded prompt and answer directly.
         docs = [doc for doc, score in docs_with_scores]
         context = format_docs(docs)
-        
+
         prompt = f"""Answer using only this context. Cite ticket IDs.
 
 Context: {context}
@@ -291,24 +298,31 @@ Context: {context}
 Question: {query}
 
 Answer:"""
-        
+
         response = llm.invoke(prompt)
         return response.content, "high_confidence"
-    
+
     elif best_distance < 1.0:  # Somewhat relevant
         # Medium-confidence path: avoid overclaiming, ask for confirmation/context.
-        ticket_id = docs_with_scores[0][0].metadata['ticket_id']
-        return f"Found possibly relevant ticket ({ticket_id}), but confidence is moderate. Would you like me to show details?", "medium_confidence"
-    
+        ticket_id = docs_with_scores[0][0].metadata["ticket_id"]
+        return (
+            f"Found possibly relevant ticket ({ticket_id}), but confidence is moderate. Would you like me to show details?",
+            "medium_confidence",
+        )
+
     else:  # Not relevant
         # Low-confidence path: safe refusal to avoid unsupported generation.
-        return "I don't have relevant ticket history for this question.", "low_confidence"
+        return (
+            "I don't have relevant ticket history for this question.",
+            "low_confidence",
+        )
+
 
 # Test with different queries
 test_queries = [
     ("authentication problems", "high confidence expected"),
     ("system performance", "medium confidence expected"),
-    ("how to bake cookies", "low confidence expected")
+    ("how to bake cookies", "low confidence expected"),
 ]
 
 for query, note in test_queries:
@@ -391,15 +405,16 @@ print("EXERCISE 5: Compare Chain Types")
 print("=" * 80)
 
 import time
+
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
 
 # Compare different retrieval strategies using LCEL
 strategies = {
     "stuff": "Concatenate all documents into context (fast, simple)",
     "map_reduce": "Process each doc separately, then combine (parallel)",
-    "refine": "Iteratively refine answer with each doc (highest quality)"
+    "refine": "Iteratively refine answer with each doc (highest quality)",
 }
 
 test_query = "How do I fix database timeouts?"
@@ -443,7 +458,9 @@ combine_prompt = ChatPromptTemplate.from_template(
     "Combine these points to answer: {question}\n\nPoints:\n{summaries}"
 )
 combine_chain = combine_prompt | llm | StrOutputParser()
-result = combine_chain.invoke({"question": test_query, "summaries": "\n".join(individual_answers)})
+result = combine_chain.invoke(
+    {"question": test_query, "summaries": "\n".join(individual_answers)}
+)
 print(f"  Time: {time.time() - start:.2f}s")
 print(f"  Answer: {result[:150]}...")
 
@@ -466,10 +483,9 @@ initial_prompt = ChatPromptTemplate.from_template(
     "Context: {context}\n\nQuestion: {question}\n\nAnswer:"
 )
 initial_chain = initial_prompt | llm | StrOutputParser()
-current_answer = initial_chain.invoke({
-    "context": docs[0].page_content,
-    "question": test_query
-})
+current_answer = initial_chain.invoke(
+    {"context": docs[0].page_content, "question": test_query}
+)
 
 # Steps 2..N: Refine the draft with each remaining document
 refine_prompt = ChatPromptTemplate.from_template(
@@ -484,11 +500,13 @@ refine_prompt = ChatPromptTemplate.from_template(
 refine_chain = refine_prompt | llm | StrOutputParser()
 
 for doc in docs[1:]:  # Iterate over remaining docs (skip the first)
-    current_answer = refine_chain.invoke({
-        "existing_answer": current_answer,
-        "context": doc.page_content,
-        "question": test_query
-    })
+    current_answer = refine_chain.invoke(
+        {
+            "existing_answer": current_answer,
+            "context": doc.page_content,
+            "question": test_query,
+        }
+    )
 
 print(f"  Time: {time.time() - start:.2f}s")
 print(f"  Answer: {current_answer[:150]}...")
@@ -516,18 +534,14 @@ for doc in docs:
 # With category filter
 print("\nWith category='Authentication' filter:")
 docs_filtered = vector_store.similarity_search(
-    query, 
-    k=3,
-    filter={"category": "Authentication"}
+    query, k=3, filter={"category": "Authentication"}
 )
 for doc in docs_filtered:
     print(f"  - {doc.metadata['ticket_id']} ({doc.metadata['category']})")
 
 print("\nWith category='Database' filter:")
 docs_filtered = vector_store.similarity_search(
-    query, 
-    k=3,
-    filter={"category": "Database"}
+    query, k=3, filter={"category": "Database"}
 )
 for doc in docs_filtered:
     print(f"  - {doc.metadata['ticket_id']} ({doc.metadata['category']})")
@@ -549,7 +563,7 @@ streaming_llm = ChatOpenAI(
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
     timeout=120,
-    max_retries=3
+    max_retries=3,
 )
 
 # Build streaming chain
@@ -571,7 +585,9 @@ streaming_chain = (
 )
 
 print("\nStreaming response:")
-query = "What causes database connection issues and how do I troubleshoot and prevent them?"
+query = (
+    "What causes database connection issues and how do I troubleshoot and prevent them?"
+)
 result = streaming_chain.invoke(query)
 print("\n")  # Newline after streaming
 
@@ -584,7 +600,8 @@ print("EXERCISE 8: Multi-Turn Conversation")
 print("=" * 80)
 
 from operator import itemgetter
-from langchain_core.messages import HumanMessage, AIMessage
+
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 # Store chat history
@@ -600,29 +617,40 @@ chat_history = []
 #   "How do I fix it?" + chat_history → "How do I fix authentication failures?"
 #
 # This is called "query condensing" or "history-aware retrieval".
-condense_prompt = ChatPromptTemplate.from_messages([
-    ("system",
-     "Given the chat history and a follow-up question, rephrase the "
-     "follow-up as a standalone question that includes all necessary "
-     "context from the history. If the question is already standalone, "
-     "return it unchanged."),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
+condense_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            (
+                "Given the chat history and a follow-up question, rephrase the "
+                "follow-up as a standalone question that includes all necessary "
+                "context from the history. If the question is already standalone, "
+                "return it unchanged."
+            ),
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 
 # Chain that rewrites the question: dict → standalone question string
 condense_chain = condense_prompt | llm | StrOutputParser()
 
 # Create conversational prompt with history placeholder
-conv_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are SupportDesk AI. Answer using ONLY the ticket context below.
+conv_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """You are SupportDesk AI. Answer using ONLY the ticket context below.
 Always cite ticket IDs. If the answer isn't in the context, say "I don't have that information."
 
 Context:
-{context}"""),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
+{context}""",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 
 # ── Step 2: Build the full chain ──────────────────────────────────────
 # Flow:
@@ -641,9 +669,7 @@ Context:
 #   LLM → StrOutputParser → answer (str)
 conv_chain = (
     # First, rewrite the question into a standalone form
-    RunnablePassthrough.assign(
-        standalone=condense_chain
-    )
+    RunnablePassthrough.assign(standalone=condense_chain)
     # Then, use the standalone question to retrieve relevant docs
     | RunnablePassthrough.assign(
         context=itemgetter("standalone") | retriever | format_docs
@@ -652,6 +678,7 @@ conv_chain = (
     | llm
     | StrOutputParser()
 )
+
 
 def ask_with_history(question, history):
     """
@@ -668,26 +695,31 @@ def ask_with_history(question, history):
     else:
         # Follow-up turn: rewrite the question using history context
         # e.g. "How do I fix it?" → "How do I fix authentication failures?"
-        standalone = condense_chain.invoke({"question": question, "chat_history": history})
+        standalone = condense_chain.invoke(
+            {"question": question, "chat_history": history}
+        )
 
     # Retrieve docs using the standalone query and generate the answer
     context = format_docs(retriever.invoke(standalone))
-    answer = (conv_prompt | llm | StrOutputParser()).invoke({
-        "context": context,
-        "chat_history": history,
-        "question": question,  # Show the original question in the prompt, not the rewritten one
-    })
+    answer = (conv_prompt | llm | StrOutputParser()).invoke(
+        {
+            "context": context,
+            "chat_history": history,
+            "question": question,  # Show the original question in the prompt, not the rewritten one
+        }
+    )
 
     history.append(HumanMessage(content=question))
     history.append(AIMessage(content=answer))
     return answer
 
+
 # Simulate a 3-turn conversation
 # Use specific queries that match ticket content for reliable retrieval
 conversation = [
     "Why are users unable to log in after a password reset?",
-    "How do I fix it?",          # "it" → login issue (remembered from turn 1)
-    "What about database issues?"  # new topic — no cross-contamination from history
+    "How do I fix it?",  # "it" → login issue (remembered from turn 1)
+    "What about database issues?",  # new topic — no cross-contamination from history
 ]
 
 print("\nSimulated conversation:")
@@ -704,6 +736,7 @@ print("\n" + "=" * 80)
 print("BONUS: Hallucination Detection")
 print("=" * 80)
 
+
 def detect_hallucination(query, answer, source_documents, llm):
     """
     Use LLM-as-judge to check if an answer is grounded in retrieved sources.
@@ -713,7 +746,7 @@ def detect_hallucination(query, answer, source_documents, llm):
     - Helps flag unsupported claims before returning responses in production.
     """
     source_text = "\n\n".join([doc.page_content for doc in source_documents])
-    
+
     detection_prompt = f"""You are a fact-checker. Determine if the answer is fully grounded in the source documents.
 
 SOURCE DOCUMENTS:
@@ -733,6 +766,7 @@ Response:"""
     response = llm.invoke(detection_prompt)
     return response.content
 
+
 # Test hallucination detection using the LCEL chain already set up above
 test_query = "How do I fix authentication issues?"
 
@@ -743,13 +777,15 @@ answer_prompt = ChatPromptTemplate.from_template(
 )
 answer_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | answer_prompt | llm | StrOutputParser()
+    | answer_prompt
+    | llm
+    | StrOutputParser()
 )
 answer = answer_chain.invoke(test_query)
 
 print(f"\nQuery: {test_query}")
 print(f"Answer: {answer[:200]}...")
-print(f"\nHallucination check:")
+print("\nHallucination check:")
 check_result = detect_hallucination(test_query, answer, source_docs, llm)
 print(check_result)
 
