@@ -34,17 +34,17 @@ cannot damage anything permanently.
 **Open `modules/2_chunking/demo.py` and search for `fixed_splitter = CharacterTextSplitter`:**
 ```python
 fixed_splitter = CharacterTextSplitter(
-    chunk_size=200,
-    chunk_overlap=20,
-    separator="\n"
+    chunk_size=200,      # Maximum characters per chunk
+    chunk_overlap=20,    # Characters to repeat between chunks (10% overlap)
+    separator="\n"       # Prefer splitting on newlines when possible
 )
 ```
 
-**Change it to**:
+**Change the two numbers**:
 ```python
 fixed_splitter = CharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=50,
+    chunk_size=500,      # was 200
+    chunk_overlap=50,    # was 20
     separator="\n"
 )
 ```
@@ -98,12 +98,12 @@ make m2
 
 **In the same file, search for `chroma_store.similarity_search(query, k=3)`:**
 ```python
-k = 3  # Top-3 results
+chroma_results = chroma_store.similarity_search(query, k=3)
 ```
 
 **Change it to**:
 ```python
-k = 5  # Top-5 results
+chroma_results = chroma_store.similarity_search(query, k=5)
 ```
 
 **Run it:**
