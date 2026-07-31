@@ -18,13 +18,14 @@ This workshop teaches you to build a production-ready Retrieval-Augmented Genera
 
 ## 🚀 Quick Start
 
-The workshop runs in Docker. You need **Docker Desktop** (Windows/macOS) or **Docker Engine + Compose** (Linux), and nothing else — no Python install, no virtualenv, no PATH changes.
+The workshop runs in a repo-local Python 3.12 virtual environment. You need
+**Python 3.12** and `make`; workshop packages stay isolated in `.venv`.
 
 ```bash
 git clone https://github.com/ccarterc/SupportDesk-RAG-Workshop.git
 cd SupportDesk-RAG-Workshop
 
-make setup          # creates .env, builds the image, starts the container
+make setup          # creates .venv and .env, then installs exact dependencies
 #  -> now edit .env and paste in your OpenAI API key
 make verify         # confirms the key, the models, and every dependency
 make m1             # run module 1
@@ -32,9 +33,12 @@ make m1             # run module 1
 
 `make verify` should end with `Environment is ready.` If it doesn't, it tells you exactly which check failed.
 
-### Why Docker?
+### Why `.venv`?
 
-Everything in this workshop is Python, and Python environments are where workshops go to die. The container pins the interpreter to 3.12 (which `chromadb` requires — it depends on Pydantic V1 internals that Python 3.13 removed), pins every dependency to a verified version in `requirements.lock.txt`, and behaves identically on Windows, macOS and Linux. No activation scripts, no execution policies, no `python` vs `py` vs `python3`.
+The local `.venv` keeps workshop packages separate from the rest of your
+machine. The setup checks for Python 3.12 and installs the exact versions in
+`requirements.lock.txt`. The `make` commands call `.venv/bin/python` directly,
+so activation is optional and every module uses the same interpreter.
 
 ### Getting your API key
 
@@ -52,21 +56,21 @@ Run `make help` to see these at any time.
 
 | Command | What it does |
 |---|---|
-| `make setup` | One-time: create `.env`, build the image, start the container |
+| `make setup` | One-time: create `.env` and `.venv`, install exact dependencies |
 | `make verify` | Check dependencies, API key, chat model, tool calling, embeddings |
 | `make m1` … `make m6` | Run one module |
 | `make all` | Run all six modules back to back, unattended |
-| `make shell` | Open a bash shell inside the container |
+| `make run FILE=...` | Run a workshop file with `.venv` Python |
 | `make clean` | Delete generated vector stores, caches and images |
-| `make down` / `make restart` | Stop / restart the container |
-| `make nuke` | Stop everything and delete the built image |
 
-The repo is bind-mounted into the container, so **edit a file on your machine and re-run — no rebuild needed.** That's the point: the exercises expect you to change code and see what happens.
+The exercises expect you to edit a file and re-run its module. There is nothing
+to rebuild between edits.
 
-Rebuild only when dependencies change:
+Activation is optional. If you want to run `python` yourself on macOS, Linux,
+or WSL, activate the environment from the repo root:
 
 ```bash
-make build && make restart
+source .venv/bin/activate
 ```
 
 ---
@@ -194,11 +198,9 @@ See [OpenAI Pricing](https://openai.com/api/pricing/) for current rates.
 SupportDesk-RAG-Workshop/
 ├── README.md
 ├── Makefile                    # every command you need
-├── Dockerfile                  # pinned Python 3.12 environment
-├── compose.yaml
 ├── verify_setup.py             # pre-flight check
 ├── requirements.txt            # direct dependencies
-├── requirements.lock.txt       # exact verified versions (used by the build)
+├── requirements.lock.txt       # exact verified versions (installed in .venv)
 ├── .env.example                # copy to .env, add your key
 ├── POST_CLASS_GUIDE.md
 ├── data/
@@ -218,10 +220,10 @@ Each module has the same four files: `demo.py` (what we walk through together), 
 
 ## 🎯 Prerequisites
 
-- Docker Desktop or Docker Engine + Compose
+- Python 3.12 (not 3.13 or newer)
 - An OpenAI API key
 - Basic Python reading ability
-- `make` — preinstalled on macOS/Linux; on Windows use WSL2, or run the `docker compose` commands from the Makefile directly
+- `make` — preinstalled on macOS/Linux; on Windows, use WSL2
 
 ---
 
@@ -230,8 +232,9 @@ Each module has the same four files: `demo.py` (what we walk through together), 
 ### `make verify` fails on the API key
 The key is missing, still the placeholder, or invalid. Check `.env`, then confirm the key is active and funded at <https://platform.openai.com/usage>.
 
-### `docker: command not found` / `Cannot connect to the Docker daemon`
-Docker isn't installed or isn't running. Start Docker Desktop and retry.
+### `Python 3.12 was not found`
+Install Python 3.12, then run `make setup` again. If it is installed under a
+different command, pass it explicitly: `make setup PYTHON=/path/to/python3.12`.
 
 ### `No .env found`
 Run `make env` to create it from the template, then paste in your key.
@@ -240,25 +243,26 @@ Run `make env` to create it from the template, then paste in your key.
 Wait 60 seconds and re-run. Module 3 makes the most calls in a burst.
 
 ### A module fails after you edited it
-The bind mount means your edit is live. Revert with `git checkout modules/<module>/demo.py`.
+Revert with `git checkout modules/<module>/demo.py`, then re-run the module.
 
 ### Changed `requirements.txt` and now imports fail
-Rebuild: `make build && make restart`. To re-pin afterwards:
+Install the updated direct dependencies in `.venv`. To re-pin afterwards:
 ```bash
-docker compose exec -T workshop pip freeze --all \
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip freeze --all \
   | grep -vE '^(pip|setuptools|wheel)==' | sort > requirements.lock.txt
 ```
 
-### Running without Docker
-Supported but not recommended. You need **Python 3.12 exactly** (not 3.13/3.14 — `chromadb` breaks):
+### Running without `make`
+You can invoke the environment directly. Run each demo from its own module
+directory because the demos load data with relative paths:
 ```bash
 python3.12 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.lock.txt
-cp .env.example .env               # then add your key
+source .venv/bin/activate
+python -m pip install -r requirements.lock.txt
+cp .env.example .env                # then add your key
 cd modules/1_embeddings && python demo.py
 ```
-Demos load data with a relative path, so run each one **from its own module directory**.
 
 ---
 

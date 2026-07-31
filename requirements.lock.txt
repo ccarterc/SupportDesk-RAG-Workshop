@@ -1,11 +1,11 @@
 # Exact dependency set, resolved and verified against all six modules.
 #
 # requirements.txt lists what the workshop directly needs, with loose bounds.
-# This file pins everything that resolution produced, so the image builds the
-# same way next month as it does today. The Docker build installs from here.
+# This file pins everything that resolution produced, so a fresh .venv gets
+# the same dependency set next month as it does today. `make setup` installs it.
 #
 # Regenerate after changing requirements.txt:
-#   docker compose exec -T workshop pip freeze --all \
+#   .venv/bin/python -m pip freeze --all \
 #     | grep -vE '^(pip|setuptools|wheel)==' | sort > requirements.lock.txt
 absl-py==2.5.0
 aiohappyeyeballs==2.7.1

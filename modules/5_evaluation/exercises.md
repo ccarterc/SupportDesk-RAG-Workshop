@@ -3,18 +3,18 @@
 
 ## How to run these exercises
 
-Everything runs in the container, but you edit files normally on your own
-machine -- the repo is mounted inside, so a save takes effect immediately. There
-is nothing to rebuild or copy between edits.
+The workshop commands use the repo-local Python 3.12 environment in `.venv`.
+The `make` targets call that interpreter directly, so you do not need to
+activate it before each command.
 
-Run all commands from the repo root, with the container already up (`make up`).
+Run `make setup` once, then run all exercise commands from the repo root.
 
 | What you want | Command |
 |---|---|
 | Run this module's demo | `make m5` |
 | Run a file you wrote yourself | `make run FILE=modules/5_evaluation/scratch.py` |
 | Undo your edits to the demo | `git checkout modules/5_evaluation/demo.py` |
-| Poke around inside the container | `make shell` |
+| Activate `.venv` for your own Python commands | `source .venv/bin/activate` |
 
 **Finding the code.** Exercises tell you what to search for rather than giving
 line numbers -- the moment you add a line, every number below it is wrong. Use
@@ -66,7 +66,7 @@ relevant = ['TICK-001', 'TICK-003']
 # Expected: precision=0.67, recall=1.0, f1=0.80
 ```
 
-**Run it:** put your code in a new file, then run it inside the container.
+**Run it:** put your code in a new file, then run it with the workshop environment.
 
 ```bash
 make run FILE=modules/5_evaluation/scratch.py
@@ -374,7 +374,7 @@ Borderline system: REVIEW ['recall = 0.65 (target 0.70)']
 Bad system:        BLOCK ['groundedness = 0.60 (min 0.75)']
 ```
 
-**Run it:** put your code in a new file, then run it inside the container.
+**Run it:** put your code in a new file, then run it with the workshop environment.
 
 ```bash
 make run FILE=modules/5_evaluation/scratch.py
@@ -464,4 +464,3 @@ You've completed the RAG Evaluation module! You now know how to:
 ---
 
 **Need help?** Check `solutions.py` or ask the instructor!
-
